@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peta Menu — Climate Action Platform (BIG)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F7F5; --panel:#FFFFFF; --ink:#0F1F1A; --ink2:#3D4F49; --muted:#6B7B74;
+    --line:#DCE5E0; --primary:#0E5A78; --accent:#2A9D8F;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--ink);-webkit-font-smoothing:antialiased;line-height:1.45;}
+  .page{max-width:1480px;margin:0 auto;padding:40px 44px 64px;}
+
+  /* Header */
+  .doc-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;border-bottom:3px solid var(--primary);padding-bottom:22px;margin-bottom:8px;}
+  .doc-title{font-size:30px;font-weight:800;letter-spacing:-0.5px;margin:0;color:var(--ink);}
+  .doc-sub{font-size:14px;color:var(--muted);margin-top:6px;max-width:680px;}
+  .doc-badges{display:flex;flex-direction:column;gap:8px;align-items:flex-end;flex-shrink:0;}
+  .badge{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;padding:5px 11px;border-radius:6px;background:var(--primary);color:#fff;white-space:nowrap;}
+  .badge.alt{background:var(--accent);}
+  .badge.ghost{background:#E3EDE8;color:var(--primary);}
+
+  /* Root node */
+  .root-wrap{display:flex;flex-direction:column;align-items:center;margin:30px 0 8px;}
+  .root{background:linear-gradient(135deg,#0E5A78,#2A9D8F);color:#fff;border-radius:16px;padding:22px 48px;text-align:center;box-shadow:0 10px 28px rgba(14,90,120,.28);min-width:480px;}
+  .root-eyebrow{font-size:11px;letter-spacing:2px;text-transform:uppercase;opacity:.85;font-weight:600;}
+  .root-name{font-size:22px;font-weight:800;margin-top:4px;white-space:nowrap;}
+  .root-meta{font-size:12.5px;opacity:.9;margin-top:8px;}
+  .trunk{width:2px;height:26px;background:var(--line);}
+  .level-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);text-align:center;margin:6px 0 18px;}
+
+  /* Module grid — masonry via CSS columns */
+  .grid{column-count:3;column-gap:18px;}
+  @media (max-width:1100px){.grid{column-count:2;}}
+  @media (max-width:720px){.grid{column-count:1;}}
+  .mod{break-inside:avoid;background:var(--panel);border:1px solid var(--line);border-top:4px solid var(--mc);border-radius:12px;margin:0 0 18px;overflow:hidden;box-shadow:0 1px 3px rgba(15,31,26,.05);}
+  .mod-head{display:flex;align-items:center;gap:12px;padding:14px 16px;background:color-mix(in srgb,var(--mc) 8%, #fff);border-bottom:1px solid var(--line);}
+  .mod-emoji{font-size:24px;line-height:1;flex-shrink:0;width:38px;height:38px;display:grid;place-items:center;background:#fff;border:1px solid var(--line);border-radius:9px;}
+  .mod-htext{flex:1;min-width:0;}
+  .mod-name{font-size:15.5px;font-weight:800;color:var(--ink);letter-spacing:-0.2px;}
+  .mod-tag{font-size:11.5px;color:var(--ink2);margin-top:2px;line-height:1.35;}
+  .mod-count{flex-shrink:0;font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;background:var(--mc);width:30px;height:30px;border-radius:8px;display:grid;place-items:center;}
+  .mod-body{padding:8px 14px 14px;}
+
+  .leaf{padding:9px 0 9px 14px;border-bottom:1px dashed var(--line);position:relative;}
+  .leaf:last-child{border-bottom:none;}
+  .leaf:before{content:"";position:absolute;left:2px;top:15px;width:7px;height:7px;border-radius:50%;background:var(--mc);opacity:.5;}
+  .leaf-head{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+  .fcode{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--mc);background:color-mix(in srgb,var(--mc) 12%, #fff);padding:1px 6px;border-radius:5px;flex-shrink:0;}
+  .fcode.dash{color:var(--muted);background:#EEF2F0;}
+  .fname{font-size:13px;font-weight:600;color:var(--ink);}
+  .fdesc{font-size:11.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+
+  .subsec{margin:8px 0 4px;padding:8px 0 2px 0;border-top:1px solid var(--line);}
+  .subsec-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--mc);margin-bottom:2px;padding-left:2px;}
+  .subsec .leaf{padding-left:14px;}
+
+  /* Footer */
+  .foot{margin-top:30px;border-top:1px solid var(--line);padding-top:16px;display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;font-size:11.5px;color:var(--muted);}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;}
+  .legend span{display:inline-flex;align-items:center;gap:6px;}
+  .lg-dot{width:9px;height:9px;border-radius:50%;}
+
+  @media print{
+    @page{size:A3 portrait;margin:12mm;}
+    body{background:#fff;}
+    .page{max-width:none;padding:0;}
+    .grid{column-count:3;}
+    .mod{box-shadow:none;}
+    .root{box-shadow:none;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  }
+</style>
+</head>
+<body>
+<template id="__bundler_thumbnail" data-bg-color="#F4F7F5">
+  <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#0E5A78"/>
+        <stop offset="1" stop-color="#2A9D8F"/>
+      </linearGradient>
+    </defs>
+    <rect width="1200" height="800" fill="#F4F7F5"/>
+    <rect x="430" y="150" width="340" height="90" rx="16" fill="url(#tg)"/>
+    <rect x="180" y="360" width="220" height="120" rx="12" fill="#fff" stroke="#DCE5E0" stroke-width="3"/>
+    <rect x="490" y="360" width="220" height="120" rx="12" fill="#fff" stroke="#DCE5E0" stroke-width="3"/>
+    <rect x="800" y="360" width="220" height="120" rx="12" fill="#fff" stroke="#DCE5E0" stroke-width="3"/>
+    <rect x="180" y="360" width="220" height="6" fill="#C44E37"/>
+    <rect x="490" y="360" width="220" height="6" fill="#2F7D5E"/>
+    <rect x="800" y="360" width="220" height="6" fill="#1E6CB5"/>
+    <path d="M600 240 V310 M290 310 H910 M290 310 V360 M600 310 V360 M910 310 V360" stroke="#B9C7C0" stroke-width="3" fill="none"/>
+    <text x="600" y="600" font-family="sans-serif" font-size="44" font-weight="800" fill="#0F1F1A" text-anchor="middle">Peta Menu</text>
+    <text x="600" y="650" font-family="sans-serif" font-size="22" fill="#6B7B74" text-anchor="middle">Climate Action Platform · BIG</text>
+  </svg>
+</template>
+<div class="page">
+  <div class="doc-head">
+    <div>
+      <h1 class="doc-title">Peta Menu — Climate Action Platform</h1>
+      <div class="doc-sub">Hierarki lengkap menu &amp; fitur platform Spatial Decision Support System (SDSS) Badan Informasi Geospasial (BIG). Homepage → 10 modul utama → 60 fitur + komponen pendukung.</div>
+    </div>
+    <div class="doc-badges">
+      <span class="badge">BIG · Indonesia</span>
+      <span class="badge alt">60 Fitur</span>
+      <span class="badge ghost">11 Modul</span>
+    </div>
+  </div>
+
+  <div class="root-wrap">
+    <div class="root">
+      <div class="root-eyebrow">Hierarki Level 1 · Beranda</div>
+      <div class="root-name">🏠 Homepage / Tampilan Utama</div>
+      <div class="root-meta">Climate Action Platform · 5 persona · 10 modul · 60 fitur</div>
+    </div>
+    <div class="trunk"></div>
+  </div>
+  <div class="level-label">Level 2 · Modul Utama  →  Level 3–4 · Fitur &amp; Sub-fitur</div>
+
+  <div class="grid">
+    <section class="mod" style="--mc:#0E5A78">
+    <div class="mod-head">
+      <div class="mod-emoji">🏠</div>
+      <div class="mod-htext">
+        <div class="mod-name">Dashboard (Halaman Utama)</div>
+        <div class="mod-tag">Beranda per-persona: konteks, KPI, mini-map, aktivitas, quick actions, module grid</div>
+      </div>
+      <div class="mod-count">7</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Konteks Bar</span></div>
+      <div class="fdesc">Selektor provinsi, periode, dan skenario aktif sebagai konteks global seluruh platform</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">KPI Cards</span></div>
+      <div class="fdesc">4 angka utama yang berubah per persona (Risk Index, Risk Alerts, Model Running, dll.)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Mini Risk Map</span></div>
+      <div class="fdesc">Peta risiko ringkas tertanam (embed FITUR 8.1) dengan drill-down per wilayah</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Activity Feed</span></div>
+      <div class="fdesc">Linimasa aktivitas terbaru: alert, komentar, laporan, skenario (FITUR 7.2 + histori)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Quick Actions</span></div>
+      <div class="fdesc">3–4 aksi cepat prioritas yang menyesuaikan persona pengguna</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Module Grid</span></div>
+      <div class="fdesc">Pintu masuk visual ke 10 modul utama platform</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Footer Status</span></div>
+      <div class="fdesc">Status kesehatan sistem &amp; uptime layanan GeoVertix</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#1E6CB5">
+    <div class="mod-head">
+      <div class="mod-emoji">🗺️</div>
+      <div class="mod-htext">
+        <div class="mod-name">Map Explorer</div>
+        <div class="mod-tag">Peta risiko full-screen: layer toggle, time slider, scenario picker, drawing &amp; measurement</div>
+      </div>
+      <div class="mod-count">7</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Layer Switcher</span></div>
+      <div class="fdesc">Aktif/nonaktif layer peta (hazard, batas administrasi, infrastruktur)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Time Slider</span></div>
+      <div class="fdesc">Penggeser waktu multi-temporal untuk animasi perubahan kondisi</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Scenario Picker</span></div>
+      <div class="fdesc">Pemilih skenario untuk overlay proyeksi di peta</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Drawing Tools</span></div>
+      <div class="fdesc">Alat gambar anotasi area di atas peta</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Measurement Tools</span></div>
+      <div class="fdesc">Alat ukur jarak dan luas</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Print / Export to Map</span></div>
+      <div class="fdesc">Cetak atau ekspor tampilan peta (mini FITUR 8.4)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Saved Locations</span></div>
+      <div class="fdesc">Lokasi tersimpan (pin) per pengguna</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#C44E37">
+    <div class="mod-head">
+      <div class="mod-emoji">🌡️</div>
+      <div class="mod-htext">
+        <div class="mod-name">Climate Modeling</div>
+        <div class="mod-tag">Pemodelan iklim: hindcast, LULC, SLR, banjir/kekeringan, biodiversity, carbon</div>
+      </div>
+      <div class="mod-count">9</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.1</span><span class="fname">Advanced Climate Modeling</span></div>
+      <div class="fdesc">Ensemble CMIP6 downscaling untuk skala kab/kota, multi-scenario</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.2</span><span class="fname">LULC Change Detection</span></div>
+      <div class="fdesc">Multi-temporal Sentinel-2 + ML classification — perubahan tutupan lahan</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.3</span><span class="fname">Net Carbon Footprint</span></div>
+      <div class="fdesc">Akunting karbon spasial: sumber, sink, neraca neto</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.4</span><span class="fname">Biodiversity Mapping</span></div>
+      <div class="fdesc">Species richness, habitat connectivity, area kunci</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.5</span><span class="fname">Sea Level Rise &amp; Subsidence</span></div>
+      <div class="fdesc">Proyeksi SLR + subsidence pesisir terintegrasi</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">2.6</span><span class="fname">Flood &amp; Drought Modeling</span></div>
+      <div class="fdesc">Hydrological modeling: banjir dan kekeringan</div>
+    </div><div class="subsec"><div class="subsec-label">Validation</div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">11.1</span><span class="fname">Hindcasting Tool</span></div>
+      <div class="fdesc">Validasi model vs. data observasi (fokus peneliti)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">11.2</span><span class="fname">Continuous Model Monitor</span></div>
+      <div class="fdesc">Monitoring real-time akurasi model in-production</div>
+    </div></div><div class="subsec"><div class="subsec-label">Model Compression</div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">12.3</span><span class="fname">Model Compression</span></div>
+      <div class="fdesc">Kompresi &amp; optimasi model untuk deployment edge/mobile</div>
+    </div></div></div>
+  </section><section class="mod" style="--mc:#C18820">
+    <div class="mod-head">
+      <div class="mod-emoji">⚠️</div>
+      <div class="mod-htext">
+        <div class="mod-name">Vulnerability Assessment</div>
+        <div class="mod-tag">Penilaian kerentanan multi-kriteria &amp; dinamis (system dynamics)</div>
+      </div>
+      <div class="mod-count">2</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">3.1</span><span class="fname">Multi-Criteria Vulnerability Assessment</span></div>
+      <div class="fdesc">Weighted overlay 12+ indikator (hazard, exposure, sensitivity, adaptive capacity)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">3.2</span><span class="fname">Dynamic Vulnerability System Modeling</span></div>
+      <div class="fdesc">Simulasi feedback loop antar-indikator dengan system dynamics</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#2F7D5E">
+    <div class="mod-head">
+      <div class="mod-emoji">🏭</div>
+      <div class="mod-htext">
+        <div class="mod-name">Sectoral Analysis</div>
+        <div class="mod-tag">Analisis sektoral: RDTR, pangan, pesisir, karhutla, wisata, energi, daya dukung</div>
+      </div>
+      <div class="mod-count">7</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.1</span><span class="fname">Spatial Planning Support Toolbox (RDTR)</span></div>
+      <div class="fdesc">Modul utama dukung RDTR/RTRW: zonasi, peruntukan, konflik kepentingan</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.2</span><span class="fname">Food Security (Rice Field)</span></div>
+      <div class="fdesc">Vulnerability sawah terhadap iklim · prediksi produksi padi</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.3</span><span class="fname">Coastal Vulnerability</span></div>
+      <div class="fdesc">Indeks kerentanan pesisir (CVI) terhadap SLR + abrasi</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.4</span><span class="fname">Forest Fire Risk (ENSO-aware)</span></div>
+      <div class="fdesc">Risiko karhutla dengan ML + sinyal ENSO/IOD</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.5</span><span class="fname">Tourism Sector Vulnerability</span></div>
+      <div class="fdesc">Kerentanan obyek wisata terhadap perubahan iklim</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.6</span><span class="fname">Renewable Energy Deployment Optimization</span></div>
+      <div class="fdesc">Pemilihan lokasi optimal PLTS/PLTB/PLTM dengan constraint sosial-ekologis</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">4.7</span><span class="fname">Land Carrying Capacity</span></div>
+      <div class="fdesc">Daya dukung dan daya tampung lingkungan</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#0E5A78">
+    <div class="mod-head">
+      <div class="mod-emoji">🧭</div>
+      <div class="mod-htext">
+        <div class="mod-name">Decision Support (SDSS Core)</div>
+        <div class="mod-tag">Inti pendukung keputusan: scenario builder, MCDA, impact, what-if, optimization</div>
+      </div>
+      <div class="mod-count">10</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.1</span><span class="fname">Multi-Level Decision Support</span></div>
+      <div class="fdesc">Entry-point per persona ke fitur SDSS lainnya</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.2</span><span class="fname">Scenario Manager &amp; Planning Builder</span></div>
+      <div class="fdesc">CRUD skenario + planning wizard 5 langkah</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.3</span><span class="fname">Impact Analysis Engine</span></div>
+      <div class="fdesc">Hitung dampak skenario ke sektor terkait</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.4</span><span class="fname">Customizable Adaptation Recommendation</span></div>
+      <div class="fdesc">Rekomendasi aksi adaptasi + ranking</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.5</span><span class="fname">MCDA Engine</span></div>
+      <div class="fdesc">Multi-criteria decision analysis · weighted overlay</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.6</span><span class="fname">Context-Aware Recommendation Engine</span></div>
+      <div class="fdesc">Rekomendasi yang mengikuti konteks aktif</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.7</span><span class="fname">Group Decision-Making</span></div>
+      <div class="fdesc">Sesi kolaborasi real-time untuk sign-off multi-stakeholder</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.8</span><span class="fname">Simulation &amp; What-If Tool</span></div>
+      <div class="fdesc">Quick-sim interaktif: slider parameter → outcome real-time</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.9</span><span class="fname">Sensitivity &amp; Uncertainty Analyzer</span></div>
+      <div class="fdesc">Analisis sensitivitas Monte Carlo · uncertainty band</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">5.10</span><span class="fname">Optimization Solver</span></div>
+      <div class="fdesc">Multi-objective optimization · NSGA-II</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#6D4AA8">
+    <div class="mod-head">
+      <div class="mod-emoji">🤖</div>
+      <div class="mod-htext">
+        <div class="mod-name">AI Assistant</div>
+        <div class="mod-tag">Asisten AI: NLP query, RAG, anomaly EWS, image recognition, XAI</div>
+      </div>
+      <div class="mod-count">9</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.5</span><span class="fname">Natural Language Query</span></div>
+      <div class="fdesc">Tanya platform dengan bahasa Indonesia natural · always-on AI</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.6</span><span class="fname">RAG Pipeline &amp; Knowledge Base</span></div>
+      <div class="fdesc">Retrieval-augmented generation dari dokumen K/L (background)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.7</span><span class="fname">MCP Server</span></div>
+      <div class="fdesc">Model Context Protocol server untuk integrasi tools (dev-only)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.1</span><span class="fname">Image &amp; Pattern Recognition</span></div>
+      <div class="fdesc">Deteksi objek dari citra satelit: deforestasi, urban sprawl, kebakaran</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.2</span><span class="fname">Anomaly Detection &amp; EWS</span></div>
+      <div class="fdesc">Deteksi anomali real-time dari stream data · trigger crisis mode</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.3</span><span class="fname">Predictive Modeling Framework</span></div>
+      <div class="fdesc">Framework ML untuk prediksi + ops (MLOps)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.4</span><span class="fname">Scenario-Based Analysis Engine</span></div>
+      <div class="fdesc">Backend untuk Scenario Builder (terhubung ke FITUR 5.2)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.8</span><span class="fname">Federated Learning</span></div>
+      <div class="fdesc">Train model lintas-organisasi tanpa berbagi data mentah</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">6.9</span><span class="fname">Explainable AI (XAI)</span></div>
+      <div class="fdesc">Penjelasan feature importance + counterfactual untuk setiap output AI</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#2A9D8F">
+    <div class="mod-head">
+      <div class="mod-emoji">🤝</div>
+      <div class="mod-htext">
+        <div class="mod-name">Collaboration</div>
+        <div class="mod-tag">Konsultasi multi-stakeholder, anotasi &amp; komentar, perbandingan skenario</div>
+      </div>
+      <div class="mod-count">3</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">7.1</span><span class="fname">Multi-Stakeholder Consultation Workflow</span></div>
+      <div class="fdesc">Workflow konsultasi multi-pihak dengan sign-off, voting, rekap</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">7.2</span><span class="fname">Annotation &amp; Comment System</span></div>
+      <div class="fdesc">Komentar inline di peta, skenario, dan laporan — lintas-fitur</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">7.3</span><span class="fname">Scenario Comparison Tool</span></div>
+      <div class="fdesc">Side-by-side diff 2–4 skenario · highlight perbedaan</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#B5683A">
+    <div class="mod-head">
+      <div class="mod-emoji">📊</div>
+      <div class="mod-htext">
+        <div class="mod-name">Reports &amp; Outputs</div>
+        <div class="mod-tag">Dashboard dinamis, ringkasan eksekutif otomatis, custom report builder</div>
+      </div>
+      <div class="mod-count">4</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">8.1</span><span class="fname">Interactive Map (Advanced)</span></div>
+      <div class="fdesc">Tautan ke Map Explorer untuk eksplorasi peta lanjutan</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">8.2</span><span class="fname">Dynamic Dashboards</span></div>
+      <div class="fdesc">Dashboard kustom: drag-drop widget, embed map/chart/text</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">8.3</span><span class="fname">Executive Summary Auto-Generation</span></div>
+      <div class="fdesc">Ringkasan eksekutif otomatis dari konteks aktif (1–4 halaman)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">8.4</span><span class="fname">Custom Report Builder</span></div>
+      <div class="fdesc">Builder drag-drop untuk laporan multi-section</div>
+    </div></div>
+  </section><section class="mod" style="--mc:#3A6E8F">
+    <div class="mod-head">
+      <div class="mod-emoji">💾</div>
+      <div class="mod-htext">
+        <div class="mod-name">Data Catalog</div>
+        <div class="mod-tag">Katalog ISO 19115, lineage, quality, stream, versioning + integrasi K/L</div>
+      </div>
+      <div class="mod-count">11</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode">10.1</span><span class="fname">Data Catalog ISO 19115</span></div>
+      <div class="fdesc">Katalog metadata standar ISO 19115 — browse &amp; cari dataset geospasial</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">10.2</span><span class="fname">Data Lineage</span></div>
+      <div class="fdesc">Pelacakan asal &amp; transformasi data (provenance)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">10.3</span><span class="fname">Data Quality Dashboard</span></div>
+      <div class="fdesc">Metrik kualitas data ISO 19157 (kelengkapan, akurasi, konsistensi)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">10.4</span><span class="fname">Stream Processor</span></div>
+      <div class="fdesc">Pemrosesan stream real-time IoT &amp; citra satelit (Kafka) — admin</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">10.5</span><span class="fname">Data Versioning</span></div>
+      <div class="fdesc">Manajemen versi &amp; snapshot dataset</div>
+    </div><div class="subsec"><div class="subsec-label">External (K/L)</div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">13.1</span><span class="fname">One Map Policy (BIG)</span></div>
+      <div class="fdesc">Base mapping kebijakan Satu Peta (RBI resmi) · WMS/WMTS</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">13.2</span><span class="fname">BNPB InaRISK / InaSAFE</span></div>
+      <div class="fdesc">Indeks risiko bencana nasional untuk cross-validation hazard</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">13.3</span><span class="fname">BMKG Climate Service</span></div>
+      <div class="fdesc">Curah hujan, temperatur, peringatan dini — feed real-time</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">13.4</span><span class="fname">KLHK SIGN-SMART</span></div>
+      <div class="fdesc">Data kehutanan &amp; inventarisasi emisi GRK nasional</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">13.5</span><span class="fname">BPS Socio-Economic</span></div>
+      <div class="fdesc">Sensus, Susenas, Sakernas, PDB regional</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Upload Data</span></div>
+      <div class="fdesc">Form unggah dataset pengguna (tautan ke FITUR 10.1)</div>
+    </div></div></div>
+  </section><section class="mod" style="--mc:#5A6B73">
+    <div class="mod-head">
+      <div class="mod-emoji">⚙️</div>
+      <div class="mod-htext">
+        <div class="mod-name">Settings &amp; Admin</div>
+        <div class="mod-tag">Profil, autentikasi, audit, bahasa, onboarding, API/developer, integrasi</div>
+      </div>
+      <div class="mod-count">9</div>
+    </div>
+    <div class="mod-body"><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Profile</span></div>
+      <div class="fdesc">Pengaturan profil pengguna (avatar, nama, organisasi)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.1</span><span class="fname">Authentication &amp; Authorization</span></div>
+      <div class="fdesc">Manajemen autentikasi &amp; hak akses (tier admin)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.2</span><span class="fname">Notification Settings</span></div>
+      <div class="fdesc">Preferensi notifikasi per-pengguna (in-app/email/SMS/push)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.3</span><span class="fname">Audit Logger</span></div>
+      <div class="fdesc">Log audit aktivitas sistem (admin only)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.4</span><span class="fname">i18n / Language</span></div>
+      <div class="fdesc">Preferensi bahasa antarmuka ID/EN</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.5</span><span class="fname">Onboarding / Tutorial</span></div>
+      <div class="fdesc">Pemicu ulang panduan &amp; tutorial halaman utama</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode">9.6</span><span class="fname">API &amp; Developer</span></div>
+      <div class="fdesc">Dokumentasi API &amp; OGC services + token (researcher/dev)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">Integrations Status</span></div>
+      <div class="fdesc">Status integrasi K/L (referensi 13.x tampilan admin)</div>
+    </div><div class="leaf">
+      <div class="leaf-head"><span class="fcode dash">•</span><span class="fname">About / Help</span></div>
+      <div class="fdesc">Versi, lisensi, kredit &amp; pusat bantuan</div>
+    </div></div>
+  </section>
+  </div>
+
+  <div class="foot">
+    <div class="legend">
+      <span><span class="lg-dot" style="background:#0E5A78"></span>Modul inti</span>
+      <span><span class="lg-dot" style="background:#2A9D8F"></span>Kolaborasi/AI</span>
+      <span><span class="lg-dot" style="background:#C44E37"></span>Pemodelan/Risiko</span>
+      <span><span class="fcode" style="color:#0E5A78;background:#E3EDE8">X.Y</span> Kode fitur Katalog</span>
+    </div>
+    <div>Sumber: Katalog Fitur SDSS v2.2 &amp; Rancangan Halaman Utama v1.1 · Disusun 2 Juni 2026</div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,42 @@
+[
+  {
+    "kabId": "sintang",
+    "tahun": 2024,
+    "totalPopulasi": 301800,
+    "popRawan": 23400,
+    "kepadatan": 13.9,
+    "growthRateHistoris": 0.014
+  },
+  {
+    "kabId": "wajo",
+    "tahun": 2024,
+    "totalPopulasi": 398500,
+    "popRawan": 142000,
+    "kepadatan": 158.9,
+    "growthRateHistoris": 0.009
+  },
+  {
+    "kabId": "bone",
+    "tahun": 2024,
+    "totalPopulasi": 742300,
+    "popRawan": 98000,
+    "kepadatan": 162.8,
+    "growthRateHistoris": 0.011
+  },
+  {
+    "kabId": "soppeng",
+    "tahun": 2024,
+    "totalPopulasi": 228600,
+    "popRawan": 54000,
+    "kepadatan": 152.4,
+    "growthRateHistoris": 0.008
+  },
+  {
+    "kabId": "belu",
+    "tahun": 2024,
+    "totalPopulasi": 197400,
+    "popRawan": 31000,
+    "kepadatan": 153.7,
+    "growthRateHistoris": 0.016
+  }
+]

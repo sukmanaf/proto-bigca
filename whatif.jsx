@@ -1,0 +1,393 @@
+// ============================================================
+// FITUR 5.8 — What-If Quick Simulator (SDSS Core)
+// Sumber: Katalog_Fitur_SDSS_Detail_v2.2.md §5.8
+// "Interaktif quick-simulation untuk eksplorasi cepat tanpa
+//  membangun full scenario di 5.2"
+// Sliders → debounced recompute → outcome live update
+// ============================================================
+
+const Icon = window.Icon;
+const tr = window.tr;
+
+// Parameter definitions — match spec sliders
+const WHATIF_PARAMS = [
+  { key: "rainfall", label: "Curah hujan baseline", icon: "🌧", min: 1.0, max: 2.0, step: 0.05, def: 1.3, fmt: (v) => `${v.toFixed(2)}×`, hint: "Pengali presipitasi vs baseline historis", color: "var(--risk-1)" },
+  { key: "forest",   label: "Konversi hutan → sawit", icon: "🌳", min: 0, max: 0.30, step: 0.01, def: 0.08, fmt: (v) => `${Math.round(v*100)}%`, hint: "Proporsi tutupan hutan dikonversi", color: "var(--accent-forest)" },
+  { key: "pop",      label: "Pertumbuhan populasi", icon: "👥", min: 0, max: 0.05, step: 0.001, def: 0.015, fmt: (v) => `${(v*100).toFixed(1)}%/th`, hint: "Laju pertumbuhan tahunan (proyeksi 20 th)", color: "var(--accent-sunset)" },
+  { key: "adapt",    label: "Kapasitas infra adaptif", icon: "🏗", min: -0.20, max: 0.50, step: 0.05, def: 0.20, fmt: (v) => `${v >= 0 ? "+" : ""}${Math.round(v*100)}%`, hint: "Perubahan kapasitas adaptasi (drainase, tanggul)", color: "var(--accent-sea)" },
+];
+
+const WHATIF_NEUTRAL = { rainfall: 1.0, forest: 0, pop: 0, adapt: 0 };
+
+function computeWhatIf(region, p) {
+  const rainFactor = Math.pow(p.rainfall, 1.4);
+  const forestFactor = 1 + p.forest * 0.8;
+  const popCompound = Math.pow(1 + p.pop, 20);
+  const adaptMitigation = 1 - p.adapt * 0.35;
+
+  const popAtRisk = Math.round(region.basePopRisk * (0.45 + 0.55 * rainFactor) * popCompound * adaptMitigation);
+  const floodKm2 = +(region.baseFloodKm2 * rainFactor * forestFactor * adaptMitigation).toFixed(1);
+  const carbon = +(region.forestHa * p.forest * 0.0021).toFixed(1); // ktCO₂/yr
+  let vuln = region.baseVuln * (0.62 + 0.24 * rainFactor) * forestFactor * adaptMitigation * 0.86;
+  vuln = Math.min(0.99, Math.max(0.05, vuln));
+  return { popAtRisk, floodKm2, carbon, vuln: +vuln.toFixed(2) };
+}
+
+function fmtNum(n) {
+  return n.toLocaleString("id-ID");
+}
+function deltaPct(base, now) {
+  if (base === 0) return now === 0 ? 0 : 100;
+  return Math.round(((now - base) / base) * 100);
+}
+function vulnColor(v) {
+  if (v >= 0.75) return "var(--risk-5)";
+  if (v >= 0.60) return "var(--risk-4)";
+  if (v >= 0.40) return "var(--risk-3)";
+  if (v >= 0.20) return "var(--risk-2)";
+  return "var(--risk-1)";
+}
+function vulnLabel(v) {
+  const t = window.tr;
+  if (v >= 0.75) return t("Sangat Tinggi");
+  if (v >= 0.60) return t("Tinggi");
+  if (v >= 0.40) return t("Sedang");
+  if (v >= 0.20) return t("Rendah");
+  return t("Sangat Rendah");
+}
+
+function WhatIfSimulator({ setRoute, ctx, openAI }) {
+  const [regions, setRegions] = React.useState([]);
+  const [regionId, setRegionId] = React.useState("sintang");
+  const [params, setParams] = React.useState({ rainfall: 1.3, forest: 0.08, pop: 0.015, adapt: 0.20 });
+  const [computing, setComputing] = React.useState(false);
+  const [result, setResult] = React.useState(null);
+  const [lastMs, setLastMs] = React.useState(null);
+  const [saved, setSaved] = React.useState(false);
+  const timerRef = React.useRef(null);
+
+  React.useEffect(() => {
+    fetch("data/data_wilayah.json")
+      .then(r => r.json())
+      .then(data => {
+        setRegions(data);
+        if (data.length > 0) setRegionId(data[0].id);
+      });
+  }, []);
+
+  const region = regions.find(r => r.id === regionId);
+  const baseline = React.useMemo(() => region ? computeWhatIf(region, WHATIF_NEUTRAL) : null, [regionId, regions]);
+
+  // Debounced recompute (live-adjust simulation, <5s spec → ~480ms mock)
+  React.useEffect(() => {
+    if (!region) return;
+    setComputing(true);
+    setSaved(false);
+    const t0 = performance.now();
+    clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
+      setResult(computeWhatIf(region, params));
+      setLastMs(Math.round(performance.now() - t0));
+      setComputing(false);
+    }, 480);
+    return () => clearTimeout(timerRef.current);
+  }, [params, regionId, regions]);
+
+  if (!region || !baseline) return <div style={{ padding: 32 }}>Memuat data wilayah…</div>;
+
+  const r = result || baseline;
+
+  const setParam = (key, val) => setParams(p => ({ ...p, [key]: val }));
+  const reset = () => setParams({ rainfall: 1.3, forest: 0.08, pop: 0.015, adapt: 0.20 });
+
+  const outcomes = [
+    { key: "pop", label: "Populasi terdampak", icon: "users", base: baseline.popAtRisk, now: r.popAtRisk, fmt: fmtNum, unit: tr("jiwa"), invert: false },
+    { key: "flood", label: "Area banjir", icon: "map", base: baseline.floodKm2, now: r.floodKm2, fmt: (v) => v.toFixed(1), unit: "km²", invert: false },
+    { key: "carbon", label: "Emisi karbon", icon: "factory", base: baseline.carbon, now: r.carbon, fmt: (v) => `+${v.toFixed(1)}`, unit: "ktCO₂/th", invert: false, absolute: true },
+    { key: "vuln", label: "Composite vulnerability", icon: "alert-triangle", base: baseline.vuln, now: r.vuln, fmt: (v) => v.toFixed(2), unit: vulnLabel(r.vuln), invert: false, isVuln: true },
+  ];
+
+  return (
+    <div className="feat-page whatif" data-screen-label="Feature: What-If Quick Simulator">
+      <div className="feat-head">
+        <div className="breadcrumb">
+          <button onClick={() => setRoute("dashboard")} className="link-btn">{tr("Beranda")}</button>
+          <Icon name="chevron-right" size={12} />
+          <button onClick={() => setRoute("sdss")} className="link-btn">SDSS</button>
+          <Icon name="chevron-right" size={12} />
+          <span>{tr("What-If Quick Simulator")}</span>
+        </div>
+        <div className="feat-head-row">
+          <div className="feat-title-block">
+            <div className="feat-icon module-sdss"><Icon name="zap" size={24} /></div>
+            <div>
+              <div className="feat-badge">FITUR 5.8 · SDSS CORE</div>
+              <h1>{tr("What-If Quick Simulator")}</h1>
+              <div className="feat-sub">{tr("Eksplorasi cepat dampak intervensi tanpa membangun full scenario · recompute real-time")}</div>
+            </div>
+          </div>
+          <div className="feat-actions">
+            <button className="ghost-btn" onClick={openAI}><Icon name="bot" size={14} />{tr("Tanya AI")}</button>
+            <button className="ghost-btn" onClick={reset}><Icon name="loader" size={14} />{tr("Reset")}</button>
+            <button className="primary-btn" onClick={() => setRoute("flow-scenario")}>
+              <Icon name="git-pull-request" size={14} />{tr("Promote ke Scenario Manager")}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="whatif-body">
+        {/* LEFT — parameter controls */}
+        <aside className="whatif-controls">
+          <div className="whatif-panel">
+            <div className="whatif-panel-head">
+              <span>{tr("Wilayah Analisis")}</span>
+            </div>
+            <div className="whatif-region">
+              <Icon name="map-pin" size={16} />
+              <select value={regionId} onChange={e => setRegionId(e.target.value)} className="text-input">
+                {regions.map(reg => (
+                  <option key={reg.id} value={reg.id}>{tr(reg.name)} · {reg.prov}</option>
+                ))}
+              </select>
+            </div>
+            <div className="whatif-region-meta">
+              <div><span className="muted">{tr("Luas")}</span><strong>{fmtNum(region.areaKm2)} km²</strong></div>
+              <div><span className="muted">{tr("Hutan")}</span><strong>{fmtNum(region.forestHa)} ha</strong></div>
+              <div><span className="muted">{tr("Vuln dasar")}</span><strong>{baseline.vuln.toFixed(2)}</strong></div>
+            </div>
+          </div>
+
+          <div className="whatif-panel">
+            <div className="whatif-panel-head">
+              <span>{tr("Adjust parameters")}</span>
+              <span className={`whatif-status ${computing ? "computing" : "done"}`}>
+                {computing
+                  ? <><span className="whatif-spinner" />{tr("recalculating…")}</>
+                  : <><Icon name="check-circle" size={12} />{tr("Updated")} · {lastMs}ms</>}
+              </span>
+            </div>
+            <div className="whatif-sliders">
+              {WHATIF_PARAMS.map(p => (
+                <div key={p.key} className="whatif-slider-row">
+                  <div className="whatif-slider-top">
+                    <span className="whatif-slider-label"><span className="whatif-emoji">{p.icon}</span>{tr(p.label)}</span>
+                    <span className="whatif-slider-val" style={{ color: p.color }}>{p.fmt(params[p.key])}</span>
+                  </div>
+                  <input
+                    type="range" min={p.min} max={p.max} step={p.step} value={params[p.key]}
+                    className="weight-range whatif-range"
+                    style={{ "--track-color": p.color }}
+                    onChange={e => setParam(p.key, parseFloat(e.target.value))}
+                  />
+                  <div className="whatif-slider-hint">{tr(p.hint)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="whatif-usecase">
+            <div className="whatif-usecase-label">{tr("Use case cepat:")}</div>
+            <button className="whatif-usecase-btn" onClick={() => setParams({ ...params, rainfall: 1.3 })}>{tr("Curah hujan +30%")}</button>
+            <button className="whatif-usecase-btn" onClick={() => setParams({ ...params, forest: 0.10 })}>{tr("Konversi hutan 10%")}</button>
+            <button className="whatif-usecase-btn" onClick={() => setParams({ ...params, pop: 0.02 })}>{tr("Populasi 2%/th")}</button>
+          </div>
+        </aside>
+
+        {/* CENTER — outcomes + map */}
+        <div className="whatif-center">
+          <div className="whatif-outcomes">
+            {outcomes.map(o => {
+              const dp = o.absolute ? null : deltaPct(o.base, o.now);
+              const worse = o.isVuln ? o.now > o.base : (dp || 0) > 0;
+              const better = o.isVuln ? o.now < o.base : (dp || 0) < 0;
+              return (
+                <div key={o.key} className={`whatif-outcome ${computing ? "computing" : ""}`}>
+                  <div className="whatif-outcome-head">
+                    <Icon name={o.icon} size={14} />
+                    <span>{tr(o.label)}</span>
+                  </div>
+                  {o.isVuln ? (
+                    <div className="whatif-outcome-vuln">
+                      <span className="whatif-base">{o.fmt(o.base)}</span>
+                      <Icon name="arrow-right" size={14} />
+                      <span className="whatif-now" style={{ color: vulnColor(o.now) }}>{o.fmt(o.now)}</span>
+                    </div>
+                  ) : (
+                    <div className="whatif-outcome-val">
+                      {!o.absolute && <span className="whatif-base">{o.fmt(o.base)}</span>}
+                      {!o.absolute && <Icon name="arrow-right" size={14} />}
+                      <span className="whatif-now">{o.fmt(o.now)}</span>
+                      <span className="whatif-unit">{o.unit}</span>
+                    </div>
+                  )}
+                  <div className="whatif-outcome-foot">
+                    {o.isVuln ? (
+                      <span className={`whatif-delta ${worse ? "worse" : better ? "better" : "flat"}`}>
+                        {worse ? "↑" : better ? "↓" : "—"} {vulnLabel(o.now)}
+                      </span>
+                    ) : o.absolute ? (
+                      <span className="whatif-unit-inline">{o.unit}</span>
+                    ) : (
+                      <span className={`whatif-delta ${worse ? "worse" : better ? "better" : "flat"}`}>
+                        {dp > 0 ? "+" : ""}{dp}% vs baseline
+                      </span>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="whatif-map-card">
+            <div className="whatif-map-head">
+              <div className="card-title"><Icon name="map" size={14} />{tr("Proyeksi dampak spasial ·")} {tr(region.name)}</div>
+              <div className="whatif-map-legend">
+                <span><span className="dot" style={{ background: "var(--risk-1)" }} />{tr("Baseline")}</span>
+                <span><span className="dot" style={{ background: "var(--risk-4)", opacity: 0.55 }} />{tr("Tambahan banjir")}</span>
+                <span><span className="dot" style={{ background: vulnColor(r.vuln) }} />Vuln saat ini</span>
+              </div>
+            </div>
+            <div className="whatif-map-stage">
+              <WhatIfMap region={region} baseline={baseline} result={r} computing={computing} />
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — compare + save */}
+        <aside className="whatif-right">
+          <div className="whatif-panel">
+            <div className="whatif-panel-head"><span>{tr("Ringkasan perubahan")}</span></div>
+            <div className="whatif-summary">
+              {outcomes.map(o => {
+                const dp = o.absolute ? null : deltaPct(o.base, o.now);
+                const worse = o.isVuln ? o.now > o.base : (dp || 0) > 0;
+                const better = o.isVuln ? o.now < o.base : (dp || 0) < 0;
+                return (
+                  <div key={o.key} className="whatif-sum-row">
+                    <span className="whatif-sum-label">{tr(o.label)}</span>
+                    <span className={`whatif-sum-delta ${worse ? "worse" : better ? "better" : "flat"}`}>
+                      {o.absolute ? `+${o.fmt(o.now).replace("+","")} ${o.unit}` : o.isVuln ? `${o.base.toFixed(2)} → ${o.now.toFixed(2)}` : `${dp > 0 ? "+" : ""}${dp}%`}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className="whatif-panel whatif-ai-note">
+            <div className="whatif-panel-head"><span><Icon name="sparkles" size={13} />{tr("Interpretasi AI")}</span></div>
+            <div className="whatif-ai-body">
+              {r.vuln > baseline.vuln + 0.08 ? (
+                <p>{tr("Kombinasi parameter ini")} <strong>{tr("menaikkan vulnerability")} {Math.round((r.vuln - baseline.vuln) / baseline.vuln * 100)}%</strong>. {tr("Driver utama:")} {params.rainfall > 1.4 ? tr("curah hujan ekstrem") : params.forest > 0.15 ? tr("konversi hutan masif") : tr("pertumbuhan populasi di area rentan")}.</p>
+              ) : r.vuln < baseline.vuln - 0.03 ? (
+                <p>{tr("Intervensi adaptif")} <strong>{tr("menurunkan vulnerability")}</strong> {tr("meski ada tekanan iklim. Kapasitas infra")} +{Math.round(params.adapt*100)}% {tr("efektif menahan dampak.")}</p>
+              ) : (
+                <p>{tr("Perubahan vulnerability moderat. Pertimbangkan menaikkan kapasitas adaptif untuk margin keamanan lebih besar.")}</p>
+              )}
+              <button className="link-btn" onClick={openAI}>{tr("Diskusikan dengan AI →")}</button>
+            </div>
+          </div>
+
+          <div className="whatif-save">
+            {saved ? (
+              <div className="whatif-saved">
+                <Icon name="check-circle" size={16} />
+                <div>
+                  <strong>{tr("Skenario tersimpan")}</strong>
+                  <div className="muted">{tr("Masuk ke pipeline SDSS sebagai draft")}</div>
+                </div>
+              </div>
+            ) : (
+              <button className="primary-btn whatif-save-btn" onClick={() => setSaved(true)}>
+                <Icon name="plus" size={14} />{tr("Simpan sebagai skenario")}
+              </button>
+            )}
+            <div className="whatif-save-note">
+              <Icon name="info" size={12} />
+              <span>{tr("Quick-sim ini bisa di-promote ke Scenario Manager (FITUR 5.2) untuk analisis MCDA penuh.")}</span>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+// Live spatial impact map — Leaflet OSM basemap + polygon dari GeoJSON
+function WhatIfMap({ region, baseline, result, computing }) {
+  const mapDivRef = React.useRef(null);
+  const mapRef = React.useRef(null);
+  const kabLayerRef = React.useRef(null);
+  const floodLayerRef = React.useRef(null);
+
+  // Init map sekali
+  React.useEffect(() => {
+    if (!mapDivRef.current) return;
+    const map = L.map(mapDivRef.current, { zoomControl: true, scrollWheelZoom: false });
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      attribution: "© OpenStreetMap contributors",
+      maxZoom: 18,
+    }).addTo(map);
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  }, []);
+
+  // Update polygon kabupaten saat region berubah
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !region?.geometry) return;
+    if (kabLayerRef.current) map.removeLayer(kabLayerRef.current);
+    const vc = vulnColor(result.vuln);
+    const layer = L.geoJSON(region.geometry, {
+      style: { color: vc, weight: 2.5, fillColor: vc, fillOpacity: 0.12 },
+    }).addTo(map);
+    kabLayerRef.current = layer;
+    map.fitBounds(layer.getBounds(), { padding: [24, 24] });
+  }, [region?.id]);
+
+  // Update warna vuln + flood circle saat result berubah
+  React.useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !region?.geometry) return;
+    const vc = vulnColor(result.vuln);
+
+    // Update warna polygon
+    if (kabLayerRef.current) {
+      kabLayerRef.current.setStyle({ color: vc, fillColor: vc });
+    }
+
+    // Flood circle: radius dari luas (km² → meter, r = sqrt(A/π))
+    if (floodLayerRef.current) map.removeLayer(floodLayerRef.current);
+    const bounds = kabLayerRef.current ? kabLayerRef.current.getBounds() : null;
+    if (bounds) {
+      const center = bounds.getCenter();
+      const baseR = Math.sqrt((baseline.floodKm2 * 1e6) / Math.PI);
+      const nowR  = Math.sqrt((result.floodKm2  * 1e6) / Math.PI);
+      const group = L.layerGroup();
+      // baseline (putus-putus)
+      L.circle(center, { radius: baseR, color: "#69A4BD", weight: 1.5, dashArray: "5 4", fill: false }).addTo(group);
+      // proyeksi (solid, merah)
+      L.circle(center, { radius: nowR, color: "#C44E37", weight: 2, fillColor: "#C44E37", fillOpacity: 0.15 }).addTo(group);
+      group.addTo(map);
+      floodLayerRef.current = group;
+    }
+  }, [result]);
+
+  return (
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div ref={mapDivRef} style={{ width: "100%", height: "100%", borderRadius: 8 }} />
+      {computing && (
+        <div style={{
+          position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(255,255,255,0.92)", padding: "4px 14px", borderRadius: 12,
+          fontSize: 12, color: "#3E4F49", border: "1px solid #ddd", pointerEvents: "none"
+        }}>
+          ⚙ {window.tr("menghitung ulang…")}
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { WhatIfSimulator });

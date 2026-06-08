@@ -1,0 +1,511 @@
+[
+  {
+    "code": "—",
+    "name": "Dashboard (Halaman Utama)",
+    "color": "#0E5A78",
+    "emoji": "🏠",
+    "tagline": "Beranda per-persona: konteks, KPI, mini-map, aktivitas, quick actions, module grid",
+    "count": 7,
+    "children": [
+      {
+        "code": "—",
+        "name": "Konteks Bar",
+        "desc": "Selektor provinsi, periode, dan skenario aktif sebagai konteks global seluruh platform"
+      },
+      {
+        "code": "—",
+        "name": "KPI Cards",
+        "desc": "4 angka utama yang berubah per persona (Risk Index, Risk Alerts, Model Running, dll.)"
+      },
+      {
+        "code": "—",
+        "name": "Mini Risk Map",
+        "desc": "Peta risiko ringkas tertanam (embed FITUR 8.1) dengan drill-down per wilayah"
+      },
+      {
+        "code": "—",
+        "name": "Activity Feed",
+        "desc": "Linimasa aktivitas terbaru: alert, komentar, laporan, skenario (FITUR 7.2 + histori)"
+      },
+      {
+        "code": "—",
+        "name": "Quick Actions",
+        "desc": "3–4 aksi cepat prioritas yang menyesuaikan persona pengguna"
+      },
+      {
+        "code": "—",
+        "name": "Module Grid",
+        "desc": "Pintu masuk visual ke 10 modul utama platform"
+      },
+      {
+        "code": "—",
+        "name": "Footer Status",
+        "desc": "Status kesehatan sistem & uptime layanan GeoVertix"
+      }
+    ]
+  },
+  {
+    "code": "8.1",
+    "name": "Map Explorer",
+    "color": "#1E6CB5",
+    "emoji": "🗺️",
+    "tagline": "Peta risiko full-screen: layer toggle, time slider, scenario picker, drawing & measurement",
+    "count": 7,
+    "children": [
+      {
+        "code": "—",
+        "name": "Layer Switcher",
+        "desc": "Aktif/nonaktif layer peta (hazard, batas administrasi, infrastruktur)"
+      },
+      {
+        "code": "—",
+        "name": "Time Slider",
+        "desc": "Penggeser waktu multi-temporal untuk animasi perubahan kondisi"
+      },
+      {
+        "code": "—",
+        "name": "Scenario Picker",
+        "desc": "Pemilih skenario untuk overlay proyeksi di peta"
+      },
+      {
+        "code": "—",
+        "name": "Drawing Tools",
+        "desc": "Alat gambar anotasi area di atas peta"
+      },
+      {
+        "code": "—",
+        "name": "Measurement Tools",
+        "desc": "Alat ukur jarak dan luas"
+      },
+      {
+        "code": "—",
+        "name": "Print / Export to Map",
+        "desc": "Cetak atau ekspor tampilan peta (mini FITUR 8.4)"
+      },
+      {
+        "code": "—",
+        "name": "Saved Locations",
+        "desc": "Lokasi tersimpan (pin) per pengguna"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Climate Modeling",
+    "color": "#C44E37",
+    "emoji": "🌡️",
+    "tagline": "Pemodelan iklim: hindcast, LULC, SLR, banjir/kekeringan, biodiversity, carbon",
+    "count": 9,
+    "children": [
+      {
+        "code": "2.1",
+        "name": "Advanced Climate Modeling",
+        "desc": "Ensemble CMIP6 downscaling untuk skala kab/kota, multi-scenario"
+      },
+      {
+        "code": "2.2",
+        "name": "LULC Change Detection",
+        "desc": "Multi-temporal Sentinel-2 + ML classification — perubahan tutupan lahan"
+      },
+      {
+        "code": "2.3",
+        "name": "Net Carbon Footprint",
+        "desc": "Akunting karbon spasial: sumber, sink, neraca neto"
+      },
+      {
+        "code": "2.4",
+        "name": "Biodiversity Mapping",
+        "desc": "Species richness, habitat connectivity, area kunci"
+      },
+      {
+        "code": "2.5",
+        "name": "Sea Level Rise & Subsidence",
+        "desc": "Proyeksi SLR + subsidence pesisir terintegrasi"
+      },
+      {
+        "code": "2.6",
+        "name": "Flood & Drought Modeling",
+        "desc": "Hydrological modeling: banjir dan kekeringan"
+      },
+      {
+        "code": "11.1",
+        "name": "Hindcasting Tool",
+        "desc": "Validasi model vs. data observasi (fokus peneliti)",
+        "sub": "Validation"
+      },
+      {
+        "code": "11.2",
+        "name": "Continuous Model Monitor",
+        "desc": "Monitoring real-time akurasi model in-production",
+        "sub": "Validation"
+      },
+      {
+        "code": "12.3",
+        "name": "Model Compression",
+        "desc": "Kompresi & optimasi model untuk deployment edge/mobile",
+        "sub": "Model Compression"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Vulnerability Assessment",
+    "color": "#C18820",
+    "emoji": "⚠️",
+    "tagline": "Penilaian kerentanan multi-kriteria & dinamis (system dynamics)",
+    "count": 2,
+    "children": [
+      {
+        "code": "3.1",
+        "name": "Multi-Criteria Vulnerability Assessment",
+        "desc": "Weighted overlay 12+ indikator (hazard, exposure, sensitivity, adaptive capacity)"
+      },
+      {
+        "code": "3.2",
+        "name": "Dynamic Vulnerability System Modeling",
+        "desc": "Simulasi feedback loop antar-indikator dengan system dynamics"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Sectoral Analysis",
+    "color": "#2F7D5E",
+    "emoji": "🏭",
+    "tagline": "Analisis sektoral: RDTR, pangan, pesisir, karhutla, wisata, energi, daya dukung",
+    "count": 7,
+    "children": [
+      {
+        "code": "4.1",
+        "name": "Spatial Planning Support Toolbox (RDTR)",
+        "desc": "Modul utama dukung RDTR/RTRW: zonasi, peruntukan, konflik kepentingan"
+      },
+      {
+        "code": "4.2",
+        "name": "Food Security (Rice Field)",
+        "desc": "Vulnerability sawah terhadap iklim · prediksi produksi padi"
+      },
+      {
+        "code": "4.3",
+        "name": "Coastal Vulnerability",
+        "desc": "Indeks kerentanan pesisir (CVI) terhadap SLR + abrasi"
+      },
+      {
+        "code": "4.4",
+        "name": "Forest Fire Risk (ENSO-aware)",
+        "desc": "Risiko karhutla dengan ML + sinyal ENSO/IOD"
+      },
+      {
+        "code": "4.5",
+        "name": "Tourism Sector Vulnerability",
+        "desc": "Kerentanan obyek wisata terhadap perubahan iklim"
+      },
+      {
+        "code": "4.6",
+        "name": "Renewable Energy Deployment Optimization",
+        "desc": "Pemilihan lokasi optimal PLTS/PLTB/PLTM dengan constraint sosial-ekologis"
+      },
+      {
+        "code": "4.7",
+        "name": "Land Carrying Capacity",
+        "desc": "Daya dukung dan daya tampung lingkungan"
+      }
+    ]
+  },
+  {
+    "code": "5.1",
+    "name": "Decision Support (SDSS Core)",
+    "color": "#0E5A78",
+    "emoji": "🧭",
+    "tagline": "Inti pendukung keputusan: scenario builder, MCDA, impact, what-if, optimization",
+    "count": 10,
+    "children": [
+      {
+        "code": "5.1",
+        "name": "Multi-Level Decision Support",
+        "desc": "Entry-point per persona ke fitur SDSS lainnya"
+      },
+      {
+        "code": "5.2",
+        "name": "Scenario Manager & Planning Builder",
+        "desc": "CRUD skenario + planning wizard 5 langkah"
+      },
+      {
+        "code": "5.3",
+        "name": "Impact Analysis Engine",
+        "desc": "Hitung dampak skenario ke sektor terkait"
+      },
+      {
+        "code": "5.4",
+        "name": "Customizable Adaptation Recommendation",
+        "desc": "Rekomendasi aksi adaptasi + ranking"
+      },
+      {
+        "code": "5.5",
+        "name": "MCDA Engine",
+        "desc": "Multi-criteria decision analysis · weighted overlay"
+      },
+      {
+        "code": "5.6",
+        "name": "Context-Aware Recommendation Engine",
+        "desc": "Rekomendasi yang mengikuti konteks aktif"
+      },
+      {
+        "code": "5.7",
+        "name": "Group Decision-Making",
+        "desc": "Sesi kolaborasi real-time untuk sign-off multi-stakeholder"
+      },
+      {
+        "code": "5.8",
+        "name": "Simulation & What-If Tool",
+        "desc": "Quick-sim interaktif: slider parameter → outcome real-time"
+      },
+      {
+        "code": "5.9",
+        "name": "Sensitivity & Uncertainty Analyzer",
+        "desc": "Analisis sensitivitas Monte Carlo · uncertainty band"
+      },
+      {
+        "code": "5.10",
+        "name": "Optimization Solver",
+        "desc": "Multi-objective optimization · NSGA-II"
+      }
+    ]
+  },
+  {
+    "code": "6.5",
+    "name": "AI Assistant",
+    "color": "#6D4AA8",
+    "emoji": "🤖",
+    "tagline": "Asisten AI: NLP query, RAG, anomaly EWS, image recognition, XAI",
+    "count": 9,
+    "children": [
+      {
+        "code": "6.5",
+        "name": "Natural Language Query",
+        "desc": "Tanya platform dengan bahasa Indonesia natural · always-on AI"
+      },
+      {
+        "code": "6.6",
+        "name": "RAG Pipeline & Knowledge Base",
+        "desc": "Retrieval-augmented generation dari dokumen K/L (background)"
+      },
+      {
+        "code": "6.7",
+        "name": "MCP Server",
+        "desc": "Model Context Protocol server untuk integrasi tools (dev-only)"
+      },
+      {
+        "code": "6.1",
+        "name": "Image & Pattern Recognition",
+        "desc": "Deteksi objek dari citra satelit: deforestasi, urban sprawl, kebakaran"
+      },
+      {
+        "code": "6.2",
+        "name": "Anomaly Detection & EWS",
+        "desc": "Deteksi anomali real-time dari stream data · trigger crisis mode"
+      },
+      {
+        "code": "6.3",
+        "name": "Predictive Modeling Framework",
+        "desc": "Framework ML untuk prediksi + ops (MLOps)"
+      },
+      {
+        "code": "6.4",
+        "name": "Scenario-Based Analysis Engine",
+        "desc": "Backend untuk Scenario Builder (terhubung ke FITUR 5.2)"
+      },
+      {
+        "code": "6.8",
+        "name": "Federated Learning",
+        "desc": "Train model lintas-organisasi tanpa berbagi data mentah"
+      },
+      {
+        "code": "6.9",
+        "name": "Explainable AI (XAI)",
+        "desc": "Penjelasan feature importance + counterfactual untuk setiap output AI"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Collaboration",
+    "color": "#2A9D8F",
+    "emoji": "🤝",
+    "tagline": "Konsultasi multi-stakeholder, anotasi & komentar, perbandingan skenario",
+    "count": 3,
+    "children": [
+      {
+        "code": "7.1",
+        "name": "Multi-Stakeholder Consultation Workflow",
+        "desc": "Workflow konsultasi multi-pihak dengan sign-off, voting, rekap"
+      },
+      {
+        "code": "7.2",
+        "name": "Annotation & Comment System",
+        "desc": "Komentar inline di peta, skenario, dan laporan — lintas-fitur"
+      },
+      {
+        "code": "7.3",
+        "name": "Scenario Comparison Tool",
+        "desc": "Side-by-side diff 2–4 skenario · highlight perbedaan"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Reports & Outputs",
+    "color": "#B5683A",
+    "emoji": "📊",
+    "tagline": "Dashboard dinamis, ringkasan eksekutif otomatis, custom report builder",
+    "count": 4,
+    "children": [
+      {
+        "code": "8.1",
+        "name": "Interactive Map (Advanced)",
+        "desc": "Tautan ke Map Explorer untuk eksplorasi peta lanjutan"
+      },
+      {
+        "code": "8.2",
+        "name": "Dynamic Dashboards",
+        "desc": "Dashboard kustom: drag-drop widget, embed map/chart/text"
+      },
+      {
+        "code": "8.3",
+        "name": "Executive Summary Auto-Generation",
+        "desc": "Ringkasan eksekutif otomatis dari konteks aktif (1–4 halaman)"
+      },
+      {
+        "code": "8.4",
+        "name": "Custom Report Builder",
+        "desc": "Builder drag-drop untuk laporan multi-section"
+      }
+    ]
+  },
+  {
+    "code": "10.1",
+    "name": "Data Catalog",
+    "color": "#3A6E8F",
+    "emoji": "💾",
+    "tagline": "Katalog ISO 19115, lineage, quality, stream, versioning + integrasi K/L",
+    "count": 11,
+    "children": [
+      {
+        "code": "10.1",
+        "name": "Data Catalog ISO 19115",
+        "desc": "Katalog metadata standar ISO 19115 — browse & cari dataset geospasial"
+      },
+      {
+        "code": "10.2",
+        "name": "Data Lineage",
+        "desc": "Pelacakan asal & transformasi data (provenance)"
+      },
+      {
+        "code": "10.3",
+        "name": "Data Quality Dashboard",
+        "desc": "Metrik kualitas data ISO 19157 (kelengkapan, akurasi, konsistensi)"
+      },
+      {
+        "code": "10.4",
+        "name": "Stream Processor",
+        "desc": "Pemrosesan stream real-time IoT & citra satelit (Kafka) — admin"
+      },
+      {
+        "code": "10.5",
+        "name": "Data Versioning",
+        "desc": "Manajemen versi & snapshot dataset"
+      },
+      {
+        "code": "13.1",
+        "name": "One Map Policy (BIG)",
+        "desc": "Base mapping kebijakan Satu Peta (RBI resmi) · WMS/WMTS",
+        "sub": "External (K/L)"
+      },
+      {
+        "code": "13.2",
+        "name": "BNPB InaRISK / InaSAFE",
+        "desc": "Indeks risiko bencana nasional untuk cross-validation hazard",
+        "sub": "External (K/L)"
+      },
+      {
+        "code": "13.3",
+        "name": "BMKG Climate Service",
+        "desc": "Curah hujan, temperatur, peringatan dini — feed real-time",
+        "sub": "External (K/L)"
+      },
+      {
+        "code": "13.4",
+        "name": "KLHK SIGN-SMART",
+        "desc": "Data kehutanan & inventarisasi emisi GRK nasional",
+        "sub": "External (K/L)"
+      },
+      {
+        "code": "13.5",
+        "name": "BPS Socio-Economic",
+        "desc": "Sensus, Susenas, Sakernas, PDB regional",
+        "sub": "External (K/L)"
+      },
+      {
+        "code": "—",
+        "name": "Upload Data",
+        "desc": "Form unggah dataset pengguna (tautan ke FITUR 10.1)",
+        "sub": "External (K/L)"
+      }
+    ]
+  },
+  {
+    "code": "—",
+    "name": "Settings & Admin",
+    "color": "#5A6B73",
+    "emoji": "⚙️",
+    "tagline": "Profil, autentikasi, audit, bahasa, onboarding, API/developer, integrasi",
+    "count": 9,
+    "children": [
+      {
+        "code": "—",
+        "name": "Profile",
+        "desc": "Pengaturan profil pengguna (avatar, nama, organisasi)"
+      },
+      {
+        "code": "9.1",
+        "name": "Authentication & Authorization",
+        "desc": "Manajemen autentikasi & hak akses (tier admin)"
+      },
+      {
+        "code": "9.2",
+        "name": "Notification Settings",
+        "desc": "Preferensi notifikasi per-pengguna (in-app/email/SMS/push)"
+      },
+      {
+        "code": "9.3",
+        "name": "Audit Logger",
+        "desc": "Log audit aktivitas sistem (admin only)"
+      },
+      {
+        "code": "9.4",
+        "name": "i18n / Language",
+        "desc": "Preferensi bahasa antarmuka ID/EN"
+      },
+      {
+        "code": "9.5",
+        "name": "Onboarding / Tutorial",
+        "desc": "Pemicu ulang panduan & tutorial halaman utama"
+      },
+      {
+        "code": "9.6",
+        "name": "API & Developer",
+        "desc": "Dokumentasi API & OGC services + token (researcher/dev)"
+      },
+      {
+        "code": "—",
+        "name": "Integrations Status",
+        "desc": "Status integrasi K/L (referensi 13.x tampilan admin)"
+      },
+      {
+        "code": "—",
+        "name": "About / Help",
+        "desc": "Versi, lisensi, kredit & pusat bantuan"
+      }
+    ]
+  }
+]

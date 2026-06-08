@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Palet — Arah 2 Tropical Atmosphere · BIG Climate Action</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+/* =========================================================
+   ARAH 2 — TROPICAL ATMOSPHERE  (light default)
+   ========================================================= */
+:root {
+  /* Surface system */
+  --bg:               #F4F7F5;
+  --surface:          #FBFCFA;
+  --surface-elevated: #FFFFFF;
+  --surface-sunken:   #E9EEEA;
+
+  /* Borders */
+  --border-subtle: #DEE5DD;
+  --border-strong: #B7C4BD;
+
+  /* Text */
+  --text-primary:   #0F1F1A;
+  --text-secondary: #3E4F49;
+  --text-muted:     #6B7B74;
+  --text-inverse:   #FBFCFA;
+
+  /* Brand & accents — Tropical Indonesia */
+  --brand-primary:       #0E5A78;   /* deep ocean teal-blue */
+  --brand-primary-hover: #074866;
+  --brand-primary-soft:  #E1ECF1;   /* 12% wash of brand for active bg */
+  --on-brand:            #FFFFFF;
+
+  --accent-sea:    #2A9D8F;          /* mangrove teal */
+  --accent-forest: #5B8C5A;          /* tropical forest */
+  --accent-sunset: #E9A352;          /* amber/golden hour */
+
+  /* Risk scale — tuned to harmonize with tropical palette */
+  --risk-1: #1E6CB5;
+  --risk-2: #2F7D5E;
+  --risk-3: #C18820;
+  --risk-4: #C44E37;
+  --risk-5: #8B1A1A;
+
+  --risk-1-soft: #E7F0F8;
+  --risk-2-soft: #E5F1EB;
+  --risk-3-soft: #FDF3DC;
+  --risk-4-soft: #FBE9E4;
+  --risk-5-soft: #F5D9D9;
+
+  /* Misc */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 10px;
+  --radius-xl: 14px;
+  --shadow-sm: 0 1px 2px rgba(15,31,26,0.04);
+  --shadow-md: 0 2px 8px rgba(15,31,26,0.06), 0 1px 2px rgba(15,31,26,0.04);
+  --shadow-lg: 0 8px 24px rgba(15,31,26,0.08), 0 2px 6px rgba(15,31,26,0.05);
+}
+
+/* DARK MODE — Arah 4 layer (Mission Control) */
+[data-theme="dark"] {
+  --bg:               #0B1220;
+  --surface:          #131C2E;
+  --surface-elevated: #1E2A45;
+  --surface-sunken:   #060A14;
+  --border-subtle:    #1F2A44;
+  --border-strong:    #334063;
+  --text-primary:     #F1F5F9;
+  --text-secondary:   #CBD5E1;
+  --text-muted:       #94A3B8;
+  --text-inverse:     #0B1220;
+  --brand-primary:    #38BDF8;
+  --brand-primary-hover: #7DD3FC;
+  --brand-primary-soft:  #14283D;
+  --on-brand:         #0B1220;
+  --accent-sea:       #22D3EE;
+  --accent-forest:    #34D399;
+  --accent-sunset:    #FBBF24;
+  --risk-1: #3B82F6;
+  --risk-2: #22C55E;
+  --risk-3: #FBBF24;
+  --risk-4: #F97316;
+  --risk-5: #EF4444;
+  --risk-1-soft: #1A2436;
+  --risk-2-soft: #143324;
+  --risk-3-soft: #3A2C0F;
+  --risk-4-soft: #3A1C0E;
+  --risk-5-soft: #3A1414;
+}
+
+/* =========================================================
+   BASE
+   ========================================================= */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--text-primary);
+  background: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  transition: background 200ms, color 200ms;
+}
+button {
+  font: inherit; cursor: pointer; border: none; background: none; color: inherit;
+}
+.mono { font-family: "JetBrains Mono", monospace; }
+
+/* =========================================================
+   APP SHELL
+   ========================================================= */
+.app {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  grid-template-rows: 60px 1fr;
+  height: 100vh;
+  width: 100vw;
+}
+.topbar {
+  grid-column: 1 / -1;
+  background: var(--surface-elevated);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 24px;
+}
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  font-size: 13px;
+  color: var(--text-primary);
+  width: 220px;
+}
+.brand-mark {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  position: relative;
+  display: grid; place-items: center;
+}
+.brand-mark::after {
+  content: "";
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: var(--on-brand);
+  position: absolute;
+  opacity: 0.95;
+}
+.brand-mark::before {
+  content: "";
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  position: absolute;
+  z-index: 1;
+}
+.brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+.brand-text small { font-size: 10px; color: var(--text-muted); font-weight: 500; letter-spacing: 0.04em; }
+
+.search {
+  flex: 1;
+  max-width: 480px;
+  height: 36px;
+  background: var(--surface-sunken);
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0 14px;
+  display: flex; align-items: center; gap: 10px;
+  color: var(--text-muted);
+  font-size: 13px;
+  transition: background 150ms, border-color 150ms;
+}
+.search:hover { background: var(--surface); border-color: var(--border-subtle); }
+.search kbd {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+}
+.topbar-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  transition: background 150ms;
+  position: relative;
+}
+.icon-btn:hover { background: var(--surface-sunken); color: var(--text-primary); }
+.icon-btn .dot {
+  position: absolute; top: 7px; right: 7px;
+  width: 8px; height: 8px;
+  background: var(--risk-4);
+  border-radius: 50%;
+  border: 2px solid var(--surface-elevated);
+}
+.user-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 0 8px 0 4px;
+  height: 36px;
+  border-radius: var(--radius-md);
+  transition: background 150ms;
+}
+.user-pill:hover { background: var(--surface-sunken); }
+.avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--brand-primary);
+  color: var(--on-brand);
+  display: grid; place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.user-pill-text { font-size: 11px; line-height: 1.1; }
+.user-pill-text strong { font-size: 12px; color: var(--text-primary); }
+.user-pill-text span { color: var(--text-muted); }
+
+.theme-toggle {
+  display: flex; align-items: center; gap: 6px;
+  padding: 0 12px;
+  height: 32px;
+  background: var(--surface-sunken);
+  border-radius: 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: background 150ms;
+}
+.theme-toggle:hover { background: var(--border-subtle); color: var(--text-primary); }
+.theme-toggle .indicator {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--accent-sunset);
+}
+[data-theme="dark"] .theme-toggle .indicator { background: var(--brand-primary); }
+
+/* =========================================================
+   SIDEBAR
+   ========================================================= */
+.sidebar {
+  background: var(--bg);
+  border-right: 1px solid var(--border-subtle);
+  padding: 16px 10px;
+  display: flex; flex-direction: column; gap: 2px;
+  overflow-y: auto;
+}
+[data-theme="dark"] .sidebar { background: var(--surface); }
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 12px;
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 500;
+  width: 100%;
+  text-align: left;
+  position: relative;
+  transition: background 150ms, color 150ms;
+}
+.nav-item:hover { background: var(--surface); color: var(--text-primary); }
+.nav-item.active {
+  background: var(--brand-primary-soft);
+  color: var(--brand-primary);
+  font-weight: 600;
+}
+.nav-item.active::before {
+  content: "";
+  position: absolute;
+  left: -10px; top: 8px; bottom: 8px;
+  width: 3px;
+  background: var(--brand-primary);
+  border-radius: 0 2px 2px 0;
+}
+.nav-icon {
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.nav-item.active .nav-icon { opacity: 1; }
+.nav-count {
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 6px;
+  background: var(--surface-sunken);
+  color: var(--text-muted);
+  border-radius: 8px;
+}
+.nav-item.active .nav-count { background: var(--brand-primary); color: var(--on-brand); }
+
+.sidebar-section {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 16px 12px 6px;
+}
+
+/* =========================================================
+   MAIN
+   ========================================================= */
+.main {
+  overflow-y: auto;
+  padding: 24px 28px 32px;
+}
+.context {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+.ctx-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 12px;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.ctx-pill strong { color: var(--text-primary); font-weight: 600; }
+.ctx-pill .ctx-icon { color: var(--accent-sea); }
+
+.hero {
+  display: flex; justify-content: space-between; align-items: flex-end;
+  margin-bottom: 28px;
+  gap: 24px;
+}
+h1 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  max-width: 640px;
+}
+h1 em { font-style: normal; color: var(--brand-primary); }
+.hero-greet { font-size: 13px; color: var(--text-muted); margin-bottom: 4px; }
+.hero-stat {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 18px;
+  min-width: 220px;
+  flex-shrink: 0;
+}
+.hero-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.hero-stat-val {
+  display: flex; align-items: baseline; gap: 4px; margin-top: 4px;
+}
+.hero-stat-num {
+  font-size: 30px;
+  font-weight: 700;
+  color: var(--risk-4);
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.hero-stat-unit { color: var(--text-muted); font-size: 13px; }
+.hero-stat-meta { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+
+/* KPI cards */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+.kpi {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  transition: box-shadow 150ms, transform 150ms;
+  position: relative;
+  overflow: hidden;
+}
+.kpi:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+.kpi.warning::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: var(--risk-3);
+}
+.kpi-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+.kpi-num {
+  font-size: 30px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  margin-top: 4px;
+  line-height: 1.1;
+}
+.kpi-meta {
+  display: flex; align-items: center; gap: 6px;
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.trend {
+  display: inline-flex; align-items: center; gap: 2px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 600;
+}
+.trend.up { background: var(--risk-2-soft); color: var(--risk-2); }
+.trend.down { background: var(--risk-5-soft); color: var(--risk-5); }
+.kpi.warning .trend.up { background: var(--risk-3-soft); color: var(--risk-3); }
+
+.spark {
+  width: 100%; height: 28px;
+  margin-top: 10px;
+  display: block;
+}
+
+/* Two-col grid */
+.two-col {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Card */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.card-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex; align-items: center; gap: 8px;
+}
+.card-title .ico { color: var(--accent-sea); }
+.card-actions { display: flex; gap: 6px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 150ms;
+}
+.btn-primary {
+  background: var(--brand-primary);
+  color: var(--on-brand);
+}
+.btn-primary:hover { background: var(--brand-primary-hover); }
+.btn-ghost {
+  border: 1px solid var(--border-subtle);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+.btn-ghost:hover { background: var(--surface-sunken); color: var(--text-primary); }
+
+/* Alert card */
+.alert-card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border-subtle);
+  border-left: 4px solid var(--risk-5);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px 16px 22px;
+  background: linear-gradient(90deg, var(--risk-5-soft) 0%, var(--surface) 60%);
+}
+.alert-tag {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--risk-5);
+  color: var(--on-brand);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+.alert-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 8px 0 4px;
+}
+.alert-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+.alert-meta {
+  display: flex; gap: 12px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+.alert-actions { display: flex; gap: 6px; margin-top: 12px; }
+
+/* Map panel */
+.map-panel { min-height: 320px; }
+.map-stage {
+  flex: 1;
+  position: relative;
+  background: linear-gradient(180deg, var(--surface-sunken) 0%, #E0EBE9 100%);
+  min-height: 280px;
+}
+[data-theme="dark"] .map-stage { background: linear-gradient(180deg, var(--surface-sunken) 0%, #0F1A33 100%); }
+.map-svg { width: 100%; height: 100%; display: block; }
+.kab-path {
+  cursor: pointer;
+  transition: opacity 150ms;
+  stroke: var(--surface);
+  stroke-width: 1.4;
+}
+.kab-path:hover { opacity: 1 !important; stroke-width: 2.5; }
+
+.legend {
+  position: absolute;
+  bottom: 12px; left: 12px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  box-shadow: var(--shadow-md);
+  font-size: 11px;
+}
+.legend-title {
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+.legend-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 1px 0;
+  color: var(--text-secondary);
+}
+.swatch { width: 12px; height: 12px; border-radius: 2px; }
+
+.map-toolbar {
+  position: absolute;
+  top: 12px; right: 12px;
+  display: flex; flex-direction: column; gap: 2px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  box-shadow: var(--shadow-md);
+}
+.map-tool {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  display: grid; place-items: center;
+}
+.map-tool:hover { background: var(--surface-sunken); color: var(--text-primary); }
+
+.layer-toggles {
+  display: flex; gap: 6px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+.layer-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: var(--surface);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+}
+.layer-chip.on { border-color: var(--brand-primary); color: var(--brand-primary); background: var(--brand-primary-soft); }
+.layer-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+/* Tokens preview strip */
+.tokens-strip {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-lg);
+  margin-top: 20px;
+}
+.token {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 11px;
+}
+.token-swatch {
+  width: 24px; height: 24px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+.token-info { line-height: 1.2; }
+.token-info strong { display: block; color: var(--text-primary); }
+.token-info span { color: var(--text-muted); font-family: "JetBrains Mono", monospace; font-size: 10px; }
+
+/* Icons via inline SVG class */
+.ico { width: 16px; height: 16px; flex-shrink: 0; }
+.ico-sm { width: 12px; height: 12px; }
+.ico-lg { width: 22px; height: 22px; }
+</style>
+</head>
+<body>
+<div class="app" data-theme="light" id="app">
+
+  <!-- TOPBAR -->
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-mark"></div>
+      <div class="brand-text">
+        <span>CLIMATE ACTION</span>
+        <small>BIG · Indonesia</small>
+      </div>
+    </div>
+    <div class="search">
+      <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <span style="flex:1">Cari layer, skenario, fitur, laporan...</span>
+      <kbd>⌘K</kbd>
+    </div>
+    <div class="topbar-right">
+      <button class="theme-toggle" id="themeToggle">
+        <span class="indicator"></span>
+        <span id="themeLabel">Light · Tropical</span>
+      </button>
+      <button class="icon-btn" title="AI Assistant">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>
+      </button>
+      <button class="icon-btn" title="Notifikasi">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        <span class="dot"></span>
+      </button>
+      <button class="user-pill">
+        <div class="avatar">BP</div>
+        <div class="user-pill-text">
+          <strong>Budi</strong>
+          <span>Bappeda Sulsel</span>
+        </div>
+      </button>
+    </div>
+  </header>
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <button class="nav-item active">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+      <span>Dashboard</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 6 9 4 15 6 21 4 21 18 15 20 9 18 3 20 3 6"/><line x1="9" y1="4" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="20"/></svg>
+      <span>Map Explorer</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"/></svg>
+      <span>Climate Modeling</span>
+      <span class="nav-count">8</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Vulnerability</span>
+      <span class="nav-count">2</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polygon points="16 8 14 14 8 16 10 10 16 8"/></svg>
+      <span>SDSS</span>
+      <span class="nav-count">10</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="21" x2="21" y2="21"/><path d="M7 16V11"/><path d="M12 16V7"/><path d="M17 16v-5"/></svg>
+      <span>Reports</span>
+    </button>
+    <div class="sidebar-section">Tersematkan</div>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14V8H5z"/><path d="M9 8V4h6v4"/></svg>
+      <span style="font-size:12px;color:var(--text-muted)">Sulsel Flood 2024</span>
+    </button>
+    <button class="nav-item">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14V8H5z"/><path d="M9 8V4h6v4"/></svg>
+      <span style="font-size:12px;color:var(--text-muted)">RDTR Makassar</span>
+    </button>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <div class="context">
+      <div class="ctx-pill">
+        <svg class="ico ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <strong>Sulawesi Selatan</strong>
+        <span>24 kab/kota</span>
+      </div>
+      <div class="ctx-pill">
+        <svg class="ico ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <strong>2025 – 2050</strong>
+      </div>
+      <div class="ctx-pill">
+        <svg class="ico ctx-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/></svg>
+        <strong>SSP2-4.5</strong>
+        <span>Middle of the road</span>
+      </div>
+    </div>
+
+    <div class="hero">
+      <div>
+        <div class="hero-greet">Selamat sore, Budi.</div>
+        <h1>Ringkasan iklim <em>Sulawesi Selatan</em> · 12 kab/kota dalam kategori risiko tinggi.</h1>
+      </div>
+      <div class="hero-stat">
+        <div class="hero-stat-label">Risk Index Provinsi</div>
+        <div class="hero-stat-val">
+          <span class="hero-stat-num">62.4</span>
+          <span class="hero-stat-unit">/ 100</span>
+        </div>
+        <div class="hero-stat-meta">↑ +1.8 vs Q1 2026 · kategori medium-high</div>
+      </div>
+    </div>
+
+    <!-- KPI CARDS -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Provinsi Aktif</div>
+        <div class="kpi-num">18 / 18</div>
+        <div class="kpi-meta"><span class="trend up">↑ 0</span><span>stabil</span></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <polyline points="0,18 14,16 28,14 42,15 56,12 70,10 84,11 100,8" fill="none" stroke="var(--brand-primary)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="kpi warning">
+        <div class="kpi-label">Risk Alerts Aktif</div>
+        <div class="kpi-num">3</div>
+        <div class="kpi-meta"><span class="trend up">↑ 1</span><span>vs minggu lalu</span></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <polyline points="0,20 14,18 28,15 42,14 56,12 70,15 84,8 100,6" fill="none" stroke="var(--risk-3)" stroke-width="1.5"/>
+        </svg>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Skenario Berjalan</div>
+        <div class="kpi-num">12</div>
+        <div class="kpi-meta"><span class="trend up">↑ 3</span><span>vs minggu lalu</span></div>
+        <svg class="spark" viewBox="0 0 100 30" preserveAspectRatio="none">
+          <polyline points="0,22 14,20 28,16 42,15 56,13 70,12 84,10 100,8" fill="none" stroke="var(--accent-sea)" stroke-width="1.5"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- MAP + ALERT -->
+    <div class="two-col">
+      <div class="card map-panel">
+        <div class="card-head">
+          <div class="card-title">
+            <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            Peta Risiko · Sulawesi Selatan
+          </div>
+          <div class="card-actions">
+            <button class="btn btn-ghost">
+              <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+              Buka Penuh
+            </button>
+          </div>
+        </div>
+        <div class="layer-toggles">
+          <span style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.04em">Layer:</span>
+          <label class="layer-chip on">
+            <span class="dot" style="background:var(--risk-4)"></span>
+            Banjir
+          </label>
+          <label class="layer-chip">
+            <span class="dot" style="background:var(--brand-primary)"></span>
+            SLR 2050
+          </label>
+          <label class="layer-chip">
+            <span class="dot" style="background:var(--accent-sunset)"></span>
+            Karhutla
+          </label>
+        </div>
+        <div class="map-stage">
+          <svg viewBox="0 0 500 380" class="map-svg" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+                <path d="M 20 0 L 0 0 0 20" fill="none" stroke="var(--border-subtle)" stroke-width="0.5"/>
+              </pattern>
+            </defs>
+            <rect width="500" height="380" fill="url(#grid)"/>
+            <!-- abstract Sulawesi -->
+            <path d="M130,30 L380,30 L385,140 L370,250 L320,360 L240,375 L150,360 L100,290 L110,150 L120,80 Z" fill="var(--surface-elevated)" stroke="var(--border-strong)" stroke-width="1.2"/>
+
+            <!-- kab polygons w/ risk colors -->
+            <path d="M260,140 L320,130 L340,180 L300,210 L255,190 Z" class="kab-path" fill="var(--risk-5)" opacity="0.85"/>
+            <path d="M275,215 L335,220 L340,270 L290,280 L268,255 Z" class="kab-path" fill="var(--risk-4)" opacity="0.85"/>
+            <path d="M205,160 L255,155 L260,195 L210,200 Z" class="kab-path" fill="var(--risk-4)" opacity="0.85"/>
+            <path d="M165,135 L210,128 L208,175 L160,180 Z" class="kab-path" fill="var(--risk-3)" opacity="0.85"/>
+            <path d="M155,290 L205,285 L210,320 L160,325 Z" class="kab-path" fill="var(--risk-3)" opacity="0.85"/>
+            <path d="M170,245 L235,240 L240,285 L172,290 Z" class="kab-path" fill="var(--risk-2)" opacity="0.85"/>
+            <path d="M165,170 L225,165 L228,202 L168,205 Z" class="kab-path" fill="var(--risk-3)" opacity="0.85"/>
+            <path d="M155,100 L185,95 L188,135 L152,138 Z" class="kab-path" fill="var(--risk-2)" opacity="0.85"/>
+            <path d="M195,95 L255,88 L258,128 L198,132 Z" class="kab-path" fill="var(--risk-2)" opacity="0.85"/>
+            <path d="M280,60 L355,55 L360,115 L285,120 Z" class="kab-path" fill="var(--risk-1)" opacity="0.85"/>
+            <path d="M205,45 L275,40 L278,88 L208,90 Z" class="kab-path" fill="var(--risk-2)" opacity="0.85"/>
+            <path d="M225,340 L290,335 L295,370 L228,375 Z" class="kab-path" fill="var(--risk-3)" opacity="0.85"/>
+
+            <!-- pulse on Wajo -->
+            <circle cx="290" cy="175" r="14" fill="none" stroke="var(--risk-5)" stroke-width="2">
+              <animate attributeName="r" from="10" to="22" dur="1.5s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" from="1" to="0" dur="1.5s" repeatCount="indefinite"/>
+            </circle>
+            <circle cx="290" cy="175" r="4" fill="var(--risk-5)"/>
+
+            <!-- cities -->
+            <circle cx="180" cy="305" r="3" fill="var(--text-primary)"/>
+            <text x="187" y="308" font-size="10" fill="var(--text-primary)" font-family="Inter">Makassar</text>
+            <text x="295" y="173" font-size="10" fill="var(--text-primary)" font-weight="600" font-family="Inter">Wajo</text>
+          </svg>
+
+          <div class="map-toolbar">
+            <button class="map-tool"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+            <button class="map-tool"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+            <button class="map-tool"><svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/></svg></button>
+          </div>
+
+          <div class="legend">
+            <div class="legend-title">Risk Index</div>
+            <div class="legend-row"><span class="swatch" style="background:var(--risk-5)"></span>Sangat Tinggi</div>
+            <div class="legend-row"><span class="swatch" style="background:var(--risk-4)"></span>Tinggi</div>
+            <div class="legend-row"><span class="swatch" style="background:var(--risk-3)"></span>Sedang</div>
+            <div class="legend-row"><span class="swatch" style="background:var(--risk-2)"></span>Rendah</div>
+            <div class="legend-row"><span class="swatch" style="background:var(--risk-1)"></span>Sangat Rendah</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ALERT + ACCENT -->
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="alert-card">
+          <span class="alert-tag">
+            <svg class="ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18v-6a5 5 0 1 1 10 0v6"/><path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2a1 1 0 0 0-1-1H6a1 1 0 0 0-1 1z"/></svg>
+            Risk Alert · High
+          </span>
+          <div class="alert-title">Banjir Wajo — Proyeksi 48 jam</div>
+          <div class="alert-desc">
+            Kedalaman air diproyeksi <strong>1.8m</strong> di 8 kecamatan rendah Sungai Cenranae.
+            Ensemble model + InaRISK BNPB · confidence 92%.
+          </div>
+          <div class="alert-meta">
+            <span>2 jam lalu</span>
+            <span>·</span>
+            <span>Sumber: Sistem EWS native</span>
+          </div>
+          <div class="alert-actions">
+            <button class="btn btn-primary">Aktivasi Crisis Mode</button>
+            <button class="btn btn-ghost">Buat brief</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-head">
+            <div class="card-title">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l1.9 5.8L20 11l-6.1 2.2L12 19l-1.9-5.8L4 11l6.1-2.2L12 3z"/></svg>
+              AI Insight
+            </div>
+          </div>
+          <div style="padding:14px 18px;font-size:13px;line-height:1.6;color:var(--text-secondary)">
+            Wajo punya kombinasi <strong style="color:var(--text-primary)">hazard tinggi + low fiscal space + drainase minim</strong>.
+            Rekomendasi prioritas: pilot dana adaptasi 2027 (Rp 8.4M est.).
+            <button class="btn btn-ghost" style="margin-top:10px;width:100%;justify-content:center">
+              Lihat XAI penuh →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOKEN PREVIEW STRIP -->
+    <div class="tokens-strip">
+      <div class="token">
+        <div class="token-swatch" style="background:var(--brand-primary)"></div>
+        <div class="token-info"><strong>Brand</strong><span>#0E5A78</span></div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:var(--accent-sea)"></div>
+        <div class="token-info"><strong>Sea</strong><span>#2A9D8F</span></div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:var(--accent-forest)"></div>
+        <div class="token-info"><strong>Forest</strong><span>#5B8C5A</span></div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:var(--accent-sunset)"></div>
+        <div class="token-info"><strong>Sunset</strong><span>#E9A352</span></div>
+      </div>
+      <div class="token">
+        <div class="token-swatch" style="background:var(--bg);border:1px solid var(--border-strong)"></div>
+        <div class="token-info"><strong>Atmosphere bg</strong><span>#F4F7F5</span></div>
+      </div>
+    </div>
+  </main>
+
+</div>
+
+<script>
+const app = document.getElementById('app');
+const toggle = document.getElementById('themeToggle');
+const label = document.getElementById('themeLabel');
+toggle.addEventListener('click', () => {
+  const cur = app.getAttribute('data-theme');
+  const next = cur === 'light' ? 'dark' : 'light';
+  app.setAttribute('data-theme', next);
+  label.textContent = next === 'light' ? 'Light · Tropical' : 'Dark · Crisis Ops';
+});
+</script>
+</body>
+</html>

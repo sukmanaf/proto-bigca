@@ -1,0 +1,201 @@
+[
+  {
+    "id": "hl-sintang-utara",
+    "kabId": "sintang",
+    "namaHutan": "Hutan Lindung Sintang Utara",
+    "jenisHutan": "Hutan Lindung",
+    "luasHa": 45000,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [111.20, 0.40],
+        [112.80, 0.40],
+        [112.90, -0.10],
+        [112.50, -0.50],
+        [111.30, -0.40],
+        [111.10, 0.10],
+        [111.20, 0.40]
+      ]]
+    }
+  },
+  {
+    "id": "hp-sintang-selatan",
+    "kabId": "sintang",
+    "namaHutan": "Hutan Produksi Sintang Selatan",
+    "jenisHutan": "Hutan Produksi",
+    "luasHa": 28000,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [112.00, -0.60],
+        [113.20, -0.60],
+        [113.40, -1.10],
+        [112.60, -1.40],
+        [111.80, -1.20],
+        [112.00, -0.60]
+      ]]
+    }
+  },
+  {
+    "id": "hk-sintang-danau",
+    "kabId": "sintang",
+    "namaHutan": "Hutan Konservasi Danau Sentarum",
+    "jenisHutan": "Hutan Konservasi",
+    "luasHa": 14400,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [111.80, 0.10],
+        [112.50, 0.10],
+        [112.60, -0.30],
+        [112.10, -0.50],
+        [111.70, -0.20],
+        [111.80, 0.10]
+      ]]
+    }
+  },
+  {
+    "id": "hm-wajo-pesisir",
+    "kabId": "wajo",
+    "namaHutan": "Hutan Mangrove Wajo Pesisir",
+    "jenisHutan": "Hutan Mangrove",
+    "luasHa": 8000,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [120.45, -3.70],
+        [120.70, -3.70],
+        [120.72, -4.05],
+        [120.48, -4.20],
+        [120.38, -3.95],
+        [120.45, -3.70]
+      ]]
+    }
+  },
+  {
+    "id": "hp-wajo-tengah",
+    "kabId": "wajo",
+    "namaHutan": "Hutan Produksi Wajo Tengah",
+    "jenisHutan": "Hutan Produksi",
+    "luasHa": 4400,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [119.95, -3.80],
+        [120.30, -3.80],
+        [120.35, -4.15],
+        [120.05, -4.30],
+        [119.90, -4.05],
+        [119.95, -3.80]
+      ]]
+    }
+  },
+  {
+    "id": "hl-bone-barat",
+    "kabId": "bone",
+    "namaHutan": "Hutan Lindung Bone Barat",
+    "jenisHutan": "Hutan Lindung",
+    "luasHa": 18000,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [119.82, -4.00],
+        [120.30, -4.00],
+        [120.35, -4.70],
+        [120.00, -5.10],
+        [119.78, -4.80],
+        [119.82, -4.00]
+      ]]
+    }
+  },
+  {
+    "id": "hp-bone-timur",
+    "kabId": "bone",
+    "namaHutan": "Hutan Produksi Bone Timur",
+    "jenisHutan": "Hutan Produksi",
+    "luasHa": 13200,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [120.50, -3.90],
+        [121.00, -3.90],
+        [121.05, -4.40],
+        [120.70, -4.80],
+        [120.40, -4.50],
+        [120.50, -3.90]
+      ]]
+    }
+  },
+  {
+    "id": "hl-soppeng-pegunungan",
+    "kabId": "soppeng",
+    "namaHutan": "Hutan Lindung Pegunungan Soppeng",
+    "jenisHutan": "Hutan Lindung",
+    "luasHa": 12000,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [119.75, -3.88],
+        [120.05, -3.88],
+        [120.10, -4.15],
+        [119.90, -4.35],
+        [119.70, -4.15],
+        [119.75, -3.88]
+      ]]
+    }
+  },
+  {
+    "id": "hp-soppeng-lereng",
+    "kabId": "soppeng",
+    "namaHutan": "Hutan Produksi Lereng Soppeng",
+    "jenisHutan": "Hutan Produksi",
+    "luasHa": 6600,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [120.05, -3.90],
+        [120.20, -3.90],
+        [120.22, -4.20],
+        [120.05, -4.40],
+        [119.95, -4.20],
+        [120.05, -3.90]
+      ]]
+    }
+  },
+  {
+    "id": "hl-belu-utara",
+    "kabId": "belu",
+    "namaHutan": "Hutan Lindung Belu Utara",
+    "jenisHutan": "Hutan Lindung",
+    "luasHa": 6500,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [124.58, -9.08],
+        [125.10, -9.08],
+        [125.15, -9.35],
+        [124.85, -9.50],
+        [124.55, -9.35],
+        [124.58, -9.08]
+      ]]
+    }
+  },
+  {
+    "id": "hs-belu-selatan",
+    "kabId": "belu",
+    "namaHutan": "Hutan Sabana Belu Selatan",
+    "jenisHutan": "Hutan Sabana",
+    "luasHa": 3300,
+    "geometry": {
+      "type": "Polygon",
+      "coordinates": [[
+        [124.70, -9.45],
+        [125.15, -9.45],
+        [125.18, -9.72],
+        [124.90, -9.80],
+        [124.65, -9.65],
+        [124.70, -9.45]
+      ]]
+    }
+  }
+]
