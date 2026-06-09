@@ -89,8 +89,8 @@ function MapExplorer({ ctx, setRoute, crisis }) {
         </aside>
 
         {/* Map canvas */}
-        <div className="map-canvas" onMouseLeave={() => setHover(null)}>
-          <MapSurface layers={layers} crisis={crisis} onHover={setHover} />
+        <div className="map-canvas">
+          <window.RealRiskMap ctx={ctx} layers={layers} crisis={crisis} onSelect={() => setRoute("vulnerability")} explorer={true} />
 
           <button
             className="map-drawer-toggle"
@@ -100,11 +100,7 @@ function MapExplorer({ ctx, setRoute, crisis }) {
             <Icon name={drawerOpen ? "chevron-left" : "chevron-right"} size={14} />
           </button>
 
-          <div className="map-overlay-tr">
-            <button className="map-ctrl"><Icon name="zoom-in" size={14} /></button>
-            <button className="map-ctrl"><Icon name="zoom-out" size={14} /></button>
-            <button className="map-ctrl"><Icon name="maximize" size={14} /></button>
-            <div className="map-ctrl-sep" />
+          <div className="map-overlay-tr lower">
             <button className="map-ctrl" title="Drawing tools"><Icon name="edit" size={14} /></button>
             <button className="map-ctrl" title="Measure"><Icon name="git-branch" size={14} /></button>
           </div>
@@ -158,16 +154,6 @@ function MapExplorer({ ctx, setRoute, crisis }) {
               <span className="muted">EPSG:4326</span>
             </div>
           </div>
-
-          {hover && (
-            <div className="map-tooltip large" style={{ left: hover.x + 16, top: hover.y + 16 }}>
-              <div className="map-tooltip-title">{hover.name}</div>
-              <div className="map-tooltip-row"><span>Risk Score</span><strong>{hover.score}</strong></div>
-              <div className="map-tooltip-row"><span>Populasi</span><strong>{hover.pop}</strong></div>
-              <div className="map-tooltip-row"><span>Year</span><strong>{year}</strong></div>
-              <div className="map-tooltip-hint">Klik untuk drill-down ke Vulnerability →</div>
-            </div>
-          )}
         </div>
       </div>
     </div>
@@ -201,6 +187,7 @@ function ModuleLanding({ moduleId, setRoute, openAI, ctx, setLang }) {
     modeling: {
       desc: "Pemodelan iklim canggih: hindcasting, projection scenario, deteksi perubahan LULC, biodiversity, SLR, banjir, dan kekeringan.",
       features: [
+        { id: "2.0", name: "Iklim Wilayah", desc: "Insight, prediksi & layer iklim per wilayah (Prov→Kota/Kab→Kec) — pintu ringan semua persona", status: "ready", actions: ["Buka","Prediksi"], persona: ["P1","P2","P3","P4","P5"], route: "feature-iklim" },
         { id: "2.1", name: "Advanced Climate Modeling", desc: "Ensemble CMIP6 downscaling untuk skala kab/kota, multi-scenario", status: "ready", actions: ["Run Model","Recent"], persona: ["P2","P3"], route: "feature-acm" },
         { id: "2.2", name: "LULC Change Detection", desc: "Multi-temporal Sentinel-2 + ML classification — perubahan tutupan lahan", status: "ready", actions: ["Buka","Histori"], persona: ["P2","P3"], route: "feature-lulc" },
         { id: "2.3", name: "Net Carbon Footprint", desc: "Akunting karbon spasial: sumber, sink, neraca neto", status: "beta", actions: ["Buka","Methodology"], route: "feature-carbon" },

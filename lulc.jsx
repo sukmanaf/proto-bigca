@@ -9,9 +9,9 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const LULC_REGIONS = [
-  { id: "sintang", name: "Kab. Sintang", prov: "Kalbar", area: 21635, loss: 87400, rate: 0.92, carbon: 12.3, corridors: 8 },
-  { id: "kapuas", name: "Kab. Kapuas Hulu", prov: "Kalbar", area: 29842, loss: 54200, rate: 0.61, carbon: 7.8, corridors: 5 },
-  { id: "wajo", name: "Kab. Wajo", prov: "Sulsel", area: 2506, loss: 4100, rate: 0.34, carbon: 0.9, corridors: 2 },
+  { id: "sintang", name: "Kab. Sintang", prov: "Kalbar", area: 21635, loss: 87400, rate: 0.92, carbon: 12.3, corridors: 8, center: [111.5, 0.05], zoom: 9 },
+  { id: "kapuas", name: "Kab. Kapuas Hulu", prov: "Kalbar", area: 29842, loss: 54200, rate: 0.61, carbon: 7.8, corridors: 5, center: [112.9, 0.85], zoom: 9 },
+  { id: "wajo", name: "Kab. Wajo", prov: "Sulsel", area: 2506, loss: 4100, rate: 0.34, carbon: 0.9, corridors: 2, center: [120.05, -4.0], zoom: 10 },
 ];
 
 const LULC_CLASSES = [
@@ -126,7 +126,7 @@ function LULCChangeDetection({ setRoute, ctx, openAI }) {
               <button className="ghost-btn small" onClick={() => setPlaying(!playing)}><Icon name={playing ? "pause" : "play"} size={12} />{playing ? "Pause" : "Time-lapse"}</button>
             </div>
             <div className="lulc-map-stage">
-              <LULCMap swipe={swipe} focus={focus} />
+              <LULCMap swipe={swipe} focus={focus} region={region} />
               <div className="lulc-swipe-control">
                 <span className="fm-swipe-label">2015</span>
                 <input type="range" min="0" max="100" value={swipe} onChange={e => { setPlaying(false); setSwipe(+e.target.value); }} className="fm-swipe-range" />
@@ -195,36 +195,40 @@ function LULCChangeDetection({ setRoute, ctx, openAI }) {
   );
 }
 
-function LULCMap({ swipe, focus }) {
-  // grid cells with 2015 vs 2024 class; reveal 2024 left of swipe line
-  const cells = [];
-  for (let r = 0; r < 8; r++) for (let c = 0; c < 11; c++) {
-    const seed = ((r * 11 + c) * 29) % 100;
-    // 2015: mostly forest; 2024: some converted to sawit
+function LULCMap({ swipe, focus, region }) {
+  const c = (region && region.center) || [111.5, 0.05];
+  const cols = 11, rows = 8, step = 0.045;
+  const lng0 = c[0] - (cols / 2) * step, lat0 = c[1] + (rows / 2) * step;
+  const colorOf = (id) => LULC_CLASSES.find(k => k.id === id)?.color || "#ccc";
+  const splitLng = lng0 + (swipe / 100) * cols * step;
+
+  const polygons = [];
+  for (let r = 0; r < rows; r++) for (let col = 0; col < cols; col++) {
+    const seed = ((r * cols + col) * 29) % 100;
     const c2015 = seed < 55 ? "primer" : seed < 78 ? "sekunder" : seed < 88 ? "sawah" : "permukiman";
     const converted = seed < 55 && seed % 3 === 0;
     const c2024 = converted ? "sawit" : c2015;
-    cells.push({ r, c, c2015, c2024, converted });
+    const cellLng = lng0 + col * step, cellLat = lat0 - r * step;
+    const showT2 = (cellLng + step / 2) < splitLng;
+    const id = showT2 ? c2024 : c2015;
+    const ring = [[cellLng, cellLat], [cellLng + step, cellLat], [cellLng + step, cellLat - step], [cellLng, cellLat - step]];
+    polygons.push({
+      coords: [ring], color: showT2 && converted ? "#8B1A1A" : "#ffffff",
+      weight: showT2 && converted ? 1.4 : 0.4, fillColor: colorOf(id),
+      fillOpacity: showT2 && converted ? 0.92 : 0.72,
+      tooltip: `${showT2 ? "2024" : "2015"}: <b>${LULC_CLASSES.find(k => k.id === id)?.label || id}</b>${converted && showT2 ? " · <span style='color:#C44E37'>terkonversi</span>" : ""}`,
+    });
   }
-  const colorOf = (id) => LULC_CLASSES.find(k => k.id === id)?.color || "#ccc";
-  const splitX = (swipe / 100) * 506;
+  // garis swipe vertikal
+  const lines = [{
+    coords: [[splitLng, lat0 + step * 0.2], [splitLng, lat0 - rows * step - step * 0.2]],
+    color: "#1F2E29", weight: 2.5, dash: "5 3", tooltip: "Swipe 2015 ↔ 2024",
+  }];
+
   return (
-    <svg viewBox="0 0 506 340" className="rdtr-svg" preserveAspectRatio="none">
-      {cells.map((cell, i) => {
-        const x = cell.c * 46, y = cell.r * 42.5;
-        const showT2 = x < splitX;
-        const id = showT2 ? cell.c2024 : cell.c2015;
-        return <rect key={i} x={x} y={y} width="46" height="42.5" fill={colorOf(id)} stroke="#fff" strokeWidth="0.5"
-          opacity={showT2 && cell.converted ? 1 : 0.85} />;
-      })}
-      {/* converted highlight on 2024 side */}
-      {cells.filter(c => c.converted && c.c * 46 < splitX).map((cell, i) => (
-        <rect key={"h"+i} x={cell.c * 46} y={cell.r * 42.5} width="46" height="42.5" fill="none" stroke="#8B1A1A" strokeWidth="1.5" />
-      ))}
-      {/* swipe line */}
-      <line x1={splitX} y1="0" x2={splitX} y2="340" stroke="#fff" strokeWidth="3" />
-      <line x1={splitX} y1="0" x2={splitX} y2="340" stroke="var(--text-primary)" strokeWidth="1" strokeDasharray="5 3" />
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={(region && region.id) || "lulc"} center={c} zoom={(region && region.zoom) || 9} basemap="positron" polygons={polygons} lines={lines} controls={true} />
+    </div>
   );
 }
 

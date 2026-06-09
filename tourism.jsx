@@ -9,9 +9,9 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const TOUR_REGIONS = [
-  { id: "bali", name: "Bali" },
-  { id: "ntb", name: "NTB (Lombok)" },
-  { id: "sulut", name: "Sulawesi Utara (Bunaken)" },
+  { id: "bali", name: "Bali", center: [115.2, -8.5], zoom: 9.4 },
+  { id: "ntb", name: "NTB (Lombok)", center: [116.3, -8.6], zoom: 9 },
+  { id: "sulut", name: "Sulawesi Utara (Bunaken)", center: [124.8, 1.5], zoom: 9.4 },
 ];
 
 const TOUR_TYPES = [
@@ -20,26 +20,26 @@ const TOUR_TYPES = [
   { id: "gunung", label: "Gunung", icon: "thermometer", color: "#5B8C5A" },
 ];
 
-// destinations (mock) — id, name, type, tciDelta (%), threat, resilience 0-100, x, y
+// destinations (mock) — id, name, type, tciDelta (%), threat, resilience 0-100, koordinat (lng,lat)
 const TOUR_DEST = {
   bali: [
-    { id: 1, name: "Pantai Kuta", type: "pantai", tci: -28, threat: "erosion +18%", res: 34, x: 35, y: 62 },
-    { id: 2, name: "Nusa Penida", type: "koral", tci: -22, threat: "bleaching 65% (dari 12%)", res: 28, x: 62, y: 70 },
-    { id: 3, name: "Gunung Batur", type: "gunung", tci: -8, threat: "longsor sedang", res: 68, x: 55, y: 30 },
-    { id: 4, name: "Tanah Lot", type: "pantai", tci: -19, threat: "abrasi + SLR", res: 45, x: 28, y: 48 },
-    { id: 5, name: "Sanur Reef", type: "koral", tci: -16, threat: "bleaching 48%", res: 52, x: 48, y: 58 },
-    { id: 6, name: "Ubud Hinterland", type: "gunung", tci: -5, threat: "curah hujan ekstrem", res: 74, x: 45, y: 40 },
+    { id: 1, name: "Pantai Kuta", type: "pantai", tci: -28, threat: "erosion +18%", res: 34, lng: 115.168, lat: -8.717 },
+    { id: 2, name: "Nusa Penida", type: "koral", tci: -22, threat: "bleaching 65% (dari 12%)", res: 28, lng: 115.545, lat: -8.727 },
+    { id: 3, name: "Gunung Batur", type: "gunung", tci: -8, threat: "longsor sedang", res: 68, lng: 115.375, lat: -8.242 },
+    { id: 4, name: "Tanah Lot", type: "pantai", tci: -19, threat: "abrasi + SLR", res: 45, lng: 115.087, lat: -8.621 },
+    { id: 5, name: "Sanur Reef", type: "koral", tci: -16, threat: "bleaching 48%", res: 52, lng: 115.262, lat: -8.688 },
+    { id: 6, name: "Ubud Hinterland", type: "gunung", tci: -5, threat: "curah hujan ekstrem", res: 74, lng: 115.263, lat: -8.507 },
   ],
   ntb: [
-    { id: 1, name: "Gili Trawangan", type: "koral", tci: -25, threat: "bleaching 58%", res: 31, x: 30, y: 35 },
-    { id: 2, name: "Pantai Senggigi", type: "pantai", tci: -20, threat: "abrasi +14%", res: 42, x: 38, y: 55 },
-    { id: 3, name: "Gunung Rinjani", type: "gunung", tci: -10, threat: "erupsi-prep + longsor", res: 60, x: 58, y: 30 },
-    { id: 4, name: "Pink Beach", type: "pantai", tci: -17, threat: "SLR + wave climate", res: 48, x: 68, y: 60 },
+    { id: 1, name: "Gili Trawangan", type: "koral", tci: -25, threat: "bleaching 58%", res: 31, lng: 116.038, lat: -8.350 },
+    { id: 2, name: "Pantai Senggigi", type: "pantai", tci: -20, threat: "abrasi +14%", res: 42, lng: 116.043, lat: -8.490 },
+    { id: 3, name: "Gunung Rinjani", type: "gunung", tci: -10, threat: "erupsi-prep + longsor", res: 60, lng: 116.458, lat: -8.411 },
+    { id: 4, name: "Pink Beach", type: "pantai", tci: -17, threat: "SLR + wave climate", res: 48, lng: 116.555, lat: -8.880 },
   ],
   sulut: [
-    { id: 1, name: "Bunaken Reef", type: "koral", tci: -30, threat: "bleaching 71%", res: 24, x: 40, y: 45 },
-    { id: 2, name: "Pantai Malalayang", type: "pantai", tci: -15, threat: "abrasi sedang", res: 55, x: 32, y: 62 },
-    { id: 3, name: "Gunung Lokon", type: "gunung", tci: -7, threat: "erupsi-prep", res: 66, x: 60, y: 35 },
+    { id: 1, name: "Bunaken Reef", type: "koral", tci: -30, threat: "bleaching 71%", res: 24, lng: 124.758, lat: 1.617 },
+    { id: 2, name: "Pantai Malalayang", type: "pantai", tci: -15, threat: "abrasi sedang", res: 55, lng: 124.815, lat: 1.450 },
+    { id: 3, name: "Gunung Lokon", type: "gunung", tci: -7, threat: "erupsi-prep", res: 66, lng: 124.792, lat: 1.358 },
   ],
 };
 
@@ -149,7 +149,7 @@ function TourismVulnerability({ setRoute, ctx, openAI }) {
               </div>
             </div>
             <div className="tour-map-stage">
-              <TourMap dests={dests} selected={selected} onSelect={setSelected} />
+              <TourMap dests={dests} selected={selected} onSelect={setSelected} region={region} />
             </div>
           </div>
         </div>
@@ -194,26 +194,23 @@ function TourismVulnerability({ setRoute, ctx, openAI }) {
   );
 }
 
-function TourMap({ dests, selected, onSelect }) {
+function TourMap({ dests, selected, onSelect, region }) {
+  const view = (region && region.center) ? region : { center: [115.2, -8.5], zoom: 9 };
+  const markers = dests.map(d => {
+    const isSel = selected === d.id;
+    const col = resColor(d.res);
+    const sz = isSel ? 26 : 22;
+    const html =
+      `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${sz}px;height:${sz}px;border-radius:50%;background:${col};opacity:${isSel ? 0.95 : 0.78};border:${isSel ? 3 : 1.5}px solid ${isSel ? "#1F2E29" : "#fff"};cursor:pointer;color:#fff;font-size:10px;font-weight:700;">${d.res}${isSel ? `<div style="position:absolute;bottom:${sz + 2}px;white-space:nowrap;background:rgba(15,31,26,.88);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;">${d.name}</div>` : ""}</div>`;
+    return {
+      lng: d.lng, lat: d.lat, html, onClick: () => onSelect(d.id),
+      popup: `<b>${d.name}</b><br>Resiliensi ${d.res}/100 · TCI ${d.tci}%<br>${d.threat}`,
+    };
+  });
   return (
-    <svg viewBox="0 0 500 320" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <rect width="500" height="320" fill="#BAD9E8" fillOpacity="0.35" />
-      {/* island */}
-      <path d="M120,90 Q220,60 320,85 Q400,105 410,180 Q380,250 250,260 Q140,255 100,190 Q95,130 120,90 Z" fill="var(--surface,#fff)" stroke="var(--border-strong)" strokeWidth="1.2" fillOpacity="0.7" />
-      <text x="250" y="160" fontSize="11" fill="var(--text-muted, #6B7B74)" textAnchor="middle">{""}</text>
-      {dests.map(d => {
-        const cx = 90 + d.x * 3.2, cy = 70 + d.y * 1.9;
-        const isSel = selected === d.id;
-        const tt = TOUR_TYPES.find(t => t.id === d.type);
-        return (
-          <g key={d.id} onClick={() => onSelect(d.id)} style={{ cursor: "pointer" }}>
-            <circle cx={cx} cy={cy} r={isSel ? 13 : 10} fill={resColor(d.res)} fillOpacity={isSel ? 0.9 : 0.7} stroke={isSel ? "var(--text-primary)" : "#fff"} strokeWidth={isSel ? 2.5 : 1.5} />
-            <text x={cx} y={cy + 3} fontSize="9" fill="#fff" textAnchor="middle" fontWeight="700">{d.res}</text>
-            {isSel && <text x={cx} y={cy - 16} fontSize="10" fill="var(--text-primary)" textAnchor="middle" fontWeight="600">{d.name}</text>}
-          </g>
-        );
-      })}
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={view.id || "tour"} center={view.center} zoom={view.zoom} basemap="voyager" markers={markers} controls={true} />
+    </div>
   );
 }
 

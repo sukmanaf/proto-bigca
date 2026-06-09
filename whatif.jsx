@@ -9,6 +9,14 @@
 const Icon = window.Icon;
 const tr = window.tr;
 
+const WHATIF_REGIONS = [
+  { id: "sintang",  name: "Kab. Sintang",  prov: "Kalbar", basePopRisk: 23400,  baseFloodKm2: 42,  baseVuln: 0.52, forestHa: 87400, areaKm2: 21635, center: [111.5, 0.05], zoom: 9.5 },
+  { id: "wajo",     name: "Kab. Wajo",     prov: "Sulsel", basePopRisk: 142000, baseFloodKm2: 88,  baseVuln: 0.84, forestHa: 12400, areaKm2: 2506, center: [120.03, -4.0], zoom: 10 },
+  { id: "bone",     name: "Kab. Bone",     prov: "Sulsel", basePopRisk: 98000,  baseFloodKm2: 64,  baseVuln: 0.79, forestHa: 31200, areaKm2: 4559, center: [120.32, -4.54], zoom: 9.5 },
+  { id: "soppeng",  name: "Kab. Soppeng",  prov: "Sulsel", basePopRisk: 54000,  baseFloodKm2: 38,  baseVuln: 0.76, forestHa: 18600, areaKm2: 1500, center: [119.89, -4.38], zoom: 10 },
+  { id: "belu",     name: "Kab. Belu",     prov: "NTT",    basePopRisk: 31000,  baseFloodKm2: 22,  baseVuln: 0.71, forestHa: 9800,  areaKm2: 1284, center: [124.92, -9.17], zoom: 10 },
+];
+
 // Parameter definitions — match spec sliders
 const WHATIF_PARAMS = [
   { key: "rainfall", label: "Curah hujan baseline", icon: "🌧", min: 1.0, max: 2.0, step: 0.05, def: 1.3, fmt: (v) => `${v.toFixed(2)}×`, hint: "Pengali presipitasi vs baseline historis", color: "var(--risk-1)" },
@@ -57,7 +65,6 @@ function vulnLabel(v) {
 }
 
 function WhatIfSimulator({ setRoute, ctx, openAI }) {
-  const [regions, setRegions] = React.useState([]);
   const [regionId, setRegionId] = React.useState("sintang");
   const [params, setParams] = React.useState({ rainfall: 1.3, forest: 0.08, pop: 0.015, adapt: 0.20 });
   const [computing, setComputing] = React.useState(false);
@@ -66,21 +73,11 @@ function WhatIfSimulator({ setRoute, ctx, openAI }) {
   const [saved, setSaved] = React.useState(false);
   const timerRef = React.useRef(null);
 
-  React.useEffect(() => {
-    fetch("data/data_wilayah.json")
-      .then(r => r.json())
-      .then(data => {
-        setRegions(data);
-        if (data.length > 0) setRegionId(data[0].id);
-      });
-  }, []);
-
-  const region = regions.find(r => r.id === regionId);
-  const baseline = React.useMemo(() => region ? computeWhatIf(region, WHATIF_NEUTRAL) : null, [regionId, regions]);
+  const region = WHATIF_REGIONS.find(r => r.id === regionId);
+  const baseline = React.useMemo(() => computeWhatIf(region, WHATIF_NEUTRAL), [regionId]);
 
   // Debounced recompute (live-adjust simulation, <5s spec → ~480ms mock)
   React.useEffect(() => {
-    if (!region) return;
     setComputing(true);
     setSaved(false);
     const t0 = performance.now();
@@ -91,9 +88,7 @@ function WhatIfSimulator({ setRoute, ctx, openAI }) {
       setComputing(false);
     }, 480);
     return () => clearTimeout(timerRef.current);
-  }, [params, regionId, regions]);
-
-  if (!region || !baseline) return <div style={{ padding: 32 }}>Memuat data wilayah…</div>;
+  }, [params, regionId]);
 
   const r = result || baseline;
 
@@ -146,7 +141,7 @@ function WhatIfSimulator({ setRoute, ctx, openAI }) {
             <div className="whatif-region">
               <Icon name="map-pin" size={16} />
               <select value={regionId} onChange={e => setRegionId(e.target.value)} className="text-input">
-                {regions.map(reg => (
+                {WHATIF_REGIONS.map(reg => (
                   <option key={reg.id} value={reg.id}>{tr(reg.name)} · {reg.prov}</option>
                 ))}
               </select>
@@ -314,76 +309,50 @@ function WhatIfSimulator({ setRoute, ctx, openAI }) {
   );
 }
 
-// Live spatial impact map — Leaflet OSM basemap + polygon dari GeoJSON
+// Live spatial impact map — flood overlay scales with computed result
 function WhatIfMap({ region, baseline, result, computing }) {
-  const mapDivRef = React.useRef(null);
-  const mapRef = React.useRef(null);
-  const kabLayerRef = React.useRef(null);
-  const floodLayerRef = React.useRef(null);
+  const c = region.center || [120, -4];
+  const floodScale = Math.min(2.2, result.floodKm2 / (baseline.floodKm2 || 1));
+  const vc = vulnColor(result.vuln);
 
-  // Init map sekali
-  React.useEffect(() => {
-    if (!mapDivRef.current) return;
-    const map = L.map(mapDivRef.current, { zoomControl: true, scrollWheelZoom: false });
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap contributors",
-      maxZoom: 18,
-    }).addTo(map);
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
-  }, []);
+  // titik fokus banjir di sekitar pusat AOI (offset derajat, radius meter)
+  const zones = [
+    { dl: 0.00, dt: 0.00, rBaseM: 4200 },
+    { dl: -0.06, dt: -0.05, rBaseM: 3000 },
+    { dl: 0.07, dt: -0.04, rBaseM: 2600 },
+    { dl: -0.02, dt: 0.06, rBaseM: 2200 },
+  ];
 
-  // Update polygon kabupaten saat region berubah
-  React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !region?.geometry) return;
-    if (kabLayerRef.current) map.removeLayer(kabLayerRef.current);
-    const vc = vulnColor(result.vuln);
-    const layer = L.geoJSON(region.geometry, {
-      style: { color: vc, weight: 2.5, fillColor: vc, fillOpacity: 0.12 },
-    }).addTo(map);
-    kabLayerRef.current = layer;
-    map.fitBounds(layer.getBounds(), { padding: [24, 24] });
-  }, [region?.id]);
+  const areas = [];
+  // baseline (referensi, putus-putus)
+  zones.forEach((z, i) => areas.push({
+    lng: c[0] + z.dl, lat: c[1] + z.dt, radiusM: z.rBaseM,
+    color: "#1E6CB5", fillOpacity: 0, weight: 1, dash: "3 3",
+    tooltip: i === 0 ? `Baseline banjir · ${baseline.floodKm2} km²` : null,
+  }));
+  // proyeksi (skala live dengan hasil)
+  zones.forEach((z, i) => areas.push({
+    lng: c[0] + z.dl, lat: c[1] + z.dt, radiusM: z.rBaseM * floodScale,
+    color: "#C44E37", fillColor: "#C44E37", fillOpacity: 0.22, weight: 1.5,
+    tooltip: i === 0 ? `Proyeksi banjir · ${result.floodKm2.toFixed(1)} km² (×${floodScale.toFixed(2)})` : null,
+  }));
 
-  // Update warna vuln + flood circle saat result berubah
-  React.useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !region?.geometry) return;
-    const vc = vulnColor(result.vuln);
-
-    // Update warna polygon
-    if (kabLayerRef.current) {
-      kabLayerRef.current.setStyle({ color: vc, fillColor: vc });
-    }
-
-    // Flood circle: radius dari luas (km² → meter, r = sqrt(A/π))
-    if (floodLayerRef.current) map.removeLayer(floodLayerRef.current);
-    const bounds = kabLayerRef.current ? kabLayerRef.current.getBounds() : null;
-    if (bounds) {
-      const center = bounds.getCenter();
-      const baseR = Math.sqrt((baseline.floodKm2 * 1e6) / Math.PI);
-      const nowR  = Math.sqrt((result.floodKm2  * 1e6) / Math.PI);
-      const group = L.layerGroup();
-      // baseline (putus-putus)
-      L.circle(center, { radius: baseR, color: "#69A4BD", weight: 1.5, dashArray: "5 4", fill: false }).addTo(group);
-      // proyeksi (solid, merah)
-      L.circle(center, { radius: nowR, color: "#C44E37", weight: 2, fillColor: "#C44E37", fillOpacity: 0.15 }).addTo(group);
-      group.addTo(map);
-      floodLayerRef.current = group;
-    }
-  }, [result]);
+  // marker pusat AOI (warna by vulnerability)
+  const markers = [{
+    lng: c[0], lat: c[1],
+    html: `<div style="display:flex;flex-direction:column;align-items:center;">
+      <div style="width:14px;height:14px;border-radius:50%;background:${vc};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4);"></div>
+      <div style="margin-top:2px;font-size:10px;font-weight:700;color:#0F1F1A;background:rgba(255,255,255,.85);padding:1px 5px;border-radius:4px;white-space:nowrap;">${region.name}</div>
+    </div>`,
+    popup: `Vulnerability: <b>${result.vuln.toFixed(2)}</b> (${vulnLabel(result.vuln)})`,
+  }];
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
-      <div ref={mapDivRef} style={{ width: "100%", height: "100%", borderRadius: 8 }} />
+      <window.GeoMap key={region.id} center={c} zoom={region.zoom || 10} basemap="positron" areas={areas} markers={markers} controls={true} />
       {computing && (
-        <div style={{
-          position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
-          background: "rgba(255,255,255,0.92)", padding: "4px 14px", borderRadius: 12,
-          fontSize: 12, color: "#3E4F49", border: "1px solid #ddd", pointerEvents: "none"
-        }}>
-          ⚙ {window.tr("menghitung ulang…")}
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "rgba(15,31,26,0.35)", display: "grid", placeItems: "center", color: "#fff", fontSize: 13 }}>
+          <span><span className="whatif-spinner" style={{ marginRight: 8 }} />{window.tr("menghitung ulang…")}</span>
         </div>
       )}
     </div>

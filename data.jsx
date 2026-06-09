@@ -6,6 +6,7 @@
 const PROVINCES = [
   { code: "sulsel", name: "Sulawesi Selatan", kabs: 24, pop: "9.1jt" },
   { code: "jabar", name: "Jawa Barat", kabs: 27, pop: "48.7jt" },
+  { code: "diy", name: "DI Yogyakarta", kabs: 5, pop: "3.7jt" },
   { code: "jatim", name: "Jawa Timur", kabs: 38, pop: "41.0jt" },
   { code: "ntt", name: "Nusa Tenggara Timur", kabs: 22, pop: "5.5jt" },
   { code: "kalbar", name: "Kalimantan Barat", kabs: 14, pop: "5.5jt" },
@@ -40,7 +41,7 @@ const PERSONAS = {
 const MODULES = [
   { id: "dashboard", icon: "home", name: "Dashboard", short: "Halaman Utama", count: 0 },
   { id: "map", icon: "map", name: "Map Explorer", short: "Peta Eksplorer", count: 0 },
-  { id: "modeling", icon: "thermometer", name: "Climate Modeling", short: "Pemodelan Iklim", count: 8, tagline: "Hindcast, LULC, SLR, banjir/kekeringan, biodiversity" },
+  { id: "modeling", icon: "thermometer", name: "Climate Modeling", short: "Pemodelan Iklim", count: 9, tagline: "Iklim Wilayah, hindcast, LULC, SLR, banjir/kekeringan, biodiversity" },
   { id: "vulnerability", icon: "alert-triangle", name: "Vulnerability Assessment", short: "Kerentanan", count: 2, tagline: "Multi-criteria & dynamic vulnerability scoring" },
   { id: "sectoral", icon: "factory", name: "Sectoral Analysis", short: "Analisis Sektoral", count: 7, tagline: "RDTR, food, coast, fire, tourism, energi, daya dukung" },
   { id: "sdss", icon: "compass", name: "Decision Support", short: "SDSS Core", count: 10, tagline: "Scenario builder, MCDA, impact, optimization" },
@@ -107,7 +108,7 @@ const CRISIS_EVENT = {
 
 // Search index (typeahead)
 const SEARCH_INDEX = [
-  { type: "Modul", name: "Climate Modeling", id: "modeling", desc: "8 fitur · pemodelan iklim" },
+  { type: "Modul", name: "Climate Modeling", id: "modeling", desc: "9 fitur · pemodelan iklim" },
   { type: "Modul", name: "Vulnerability Assessment", id: "vulnerability", desc: "2 fitur · MCDA + dynamic" },
   { type: "Modul", name: "Sectoral Analysis", id: "sectoral", desc: "7 fitur · RDTR, food, coast..." },
   { type: "Modul", name: "Decision Support (SDSS)", id: "sdss", desc: "10 fitur · scenario, MCDA, optim" },
@@ -115,6 +116,8 @@ const SEARCH_INDEX = [
   { type: "Fitur", name: "Multi-Criteria Vulnerability Assessment", id: "vulnerability", desc: "FITUR 3.1 · weighted overlay" },
   { type: "Fitur", name: "Scenario Manager & Planning Builder", id: "sdss", desc: "FITUR 5.2 · scenario CRUD + planning" },
   { type: "Fitur", name: "Hindcasting Tool", id: "modeling", desc: "FITUR 11.1 · validate model vs observed" },
+  { type: "Fitur", name: "Iklim Wilayah", id: "feature-iklim", desc: "FITUR 2.0 · insight, prediksi & layer iklim" },
+  { type: "Fitur", name: "Prediksi Suhu Wilayah", id: "feature-iklim", desc: "FITUR 2.0 · ML t2m bulanan" },
   { type: "Fitur", name: "Executive Summary Auto-Generation", id: "reports", desc: "FITUR 8.3 · briefing per provinsi" },
   { type: "Fitur", name: "Spatial Planning Support Toolbox (RDTR)", id: "sectoral", desc: "FITUR 4.1 · pendukung RDTR" },
   { type: "Fitur", name: "Forest Fire Risk (ENSO-aware)", id: "sectoral", desc: "FITUR 4.4 · karhutla + ENSO" },

@@ -18,12 +18,14 @@ function Dashboard({ ctx, setRoute, openAI, crisis }) {
     ],
     P2: [
       { icon: "plus-circle", label: "Skenario Baru", primary: true, route: "sdss" },
+      { icon: "cloud-sun", label: "Iklim Wilayah", route: "feature-iklim" },
       { icon: "layers", label: "Cari Layer", route: "data" },
       { icon: "file-text", label: "Buat Laporan", route: "reports" },
       { icon: "bot", label: "Tanya AI", onClick: openAI },
     ],
     P3: [
       { icon: "git-branch", label: "Lanjutkan Project", primary: true, route: "modeling" },
+      { icon: "sparkles", label: "Prediksi Iklim", route: "feature-iklim" },
       { icon: "activity", label: "Hindcast Baru", route: "modeling" },
       { icon: "download", label: "Download Dataset", route: "data" },
       { icon: "external-link", label: "API Docs", route: "settings" },
@@ -121,6 +123,11 @@ function Dashboard({ ctx, setRoute, openAI, crisis }) {
         <ActivityFeed setRoute={setRoute} />
       </section>
 
+      {/* Snapshot Iklim Wilayah (FITUR 2.0) */}
+      <section className="zone">
+        <window.ClimateSnapshot ctx={ctx} setRoute={setRoute} />
+      </section>
+
       {/* Module Grid */}
       <section className="zone">
         <ModuleGrid persona={ctx.persona} setRoute={setRoute} />
@@ -204,16 +211,10 @@ function RiskMapInline({ ctx, setRoute, crisis }) {
         <button className="ghost-btn small"><Icon name="layers" size={12} />{tr("Semua layer")}</button>
       </div>
 
-      <div className="map-stage" onMouseLeave={() => setHover(null)}>
-        <MapSurface layers={layers} crisis={crisis} onHover={setHover} />
+      <div className="map-stage">
+        <window.RealRiskMap ctx={ctx} layers={layers} crisis={crisis} onSelect={() => setRoute("vulnerability")} explorer={false} />
         <div className="map-overlay-tl">
           <div className="map-attribution">© BIG · GeoVertix WMS · OSM</div>
-        </div>
-        <div className="map-overlay-tr">
-          <button className="map-ctrl"><Icon name="zoom-in" size={14} /></button>
-          <button className="map-ctrl"><Icon name="zoom-out" size={14} /></button>
-          <button className="map-ctrl"><Icon name="maximize" size={14} /></button>
-          <button className="map-ctrl"><Icon name="layers" size={14} /></button>
         </div>
         <div className="map-overlay-bl legend">
           <div className="legend-title">{tr("Risiko")}</div>
@@ -230,14 +231,6 @@ function RiskMapInline({ ctx, setRoute, crisis }) {
             </div>
           ))}
         </div>
-        {hover && (
-          <div className="map-tooltip" style={{ left: hover.x + 12, top: hover.y + 12 }}>
-            <div className="map-tooltip-title">{hover.name}</div>
-            <div className="map-tooltip-row"><span>{tr("Risk Score")}</span><strong>{tr(hover.score)}</strong></div>
-            <div className="map-tooltip-row"><span>{tr("Populasi")}</span><strong>{hover.pop}</strong></div>
-            <div className="map-tooltip-hint">{tr("Klik untuk drill-down")}</div>
-          </div>
-        )}
       </div>
 
       <div className="map-insight">

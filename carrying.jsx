@@ -9,9 +9,9 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const CC_REGIONS = [
-  { id: "demak", name: "Kab. Demak", prov: "Jateng" },
-  { id: "makassar", name: "Kota Makassar", prov: "Sulsel" },
-  { id: "wajo", name: "Kab. Wajo", prov: "Sulsel" },
+  { id: "demak", name: "Kab. Demak", prov: "Jateng", center: [110.64, -6.89], zoom: 11 },
+  { id: "makassar", name: "Kota Makassar", prov: "Sulsel", center: [119.45, -5.16], zoom: 11.5 },
+  { id: "wajo", name: "Kab. Wajo", prov: "Sulsel", center: [120.03, -4.0], zoom: 10.5 },
 ];
 
 const CC_GLOBAL = [
@@ -130,7 +130,7 @@ function CarryingCapacity({ setRoute, ctx, openAI }) {
               </select>
             </div>
             <div className="cc-map-stage">
-              <HexMap cells={CC_CELLS} selected={selected} onSelect={(id) => { setSelected(id); setSimResult(null); }} />
+              <HexMap cells={CC_CELLS} selected={selected} region={region} onSelect={(id) => { setSelected(id); setSimResult(null); }} />
               <div className="cc-legend">
                 <div className="cc-legend-title">Carrying Capacity</div>
                 {[["#2F7D5E","Tinggi tersisa"],["#88C0A1","Sedang"],["#C18820","Mendekati limit"],["#8B1A1A","Overloaded"]].map(([c, l]) => (
@@ -217,32 +217,40 @@ function CarryingCapacity({ setRoute, ctx, openAI }) {
   );
 }
 
-function HexMap({ cells, selected, onSelect }) {
-  const hexW = 46, hexH = 40;
-  const hexPath = (cx, cy, s) => {
+function HexMap({ cells, selected, onSelect, region }) {
+  const c = (region && region.center) || [119.45, -5.16];
+  const step = 0.018; // jarak antar-hex (derajat)
+  const s = step * 0.62; // radius hex
+  // pusatkan grid 9×7
+  const q0 = 4, r0 = 3;
+  const hexPoly = (clng, clat) => {
     const pts = [];
     for (let i = 0; i < 6; i++) {
       const a = Math.PI / 180 * (60 * i - 30);
-      pts.push(`${(cx + s * Math.cos(a)).toFixed(1)},${(cy + s * Math.sin(a)).toFixed(1)}`);
+      // koreksi aspek lintang agar hex tampak teratur
+      pts.push([clng + s * Math.cos(a) / Math.cos(clat * Math.PI / 180), clat + s * Math.sin(a)]);
     }
-    return pts.join(" ");
+    return pts;
   };
+  const polygons = cells.map(cell => {
+    const clng = c[0] + (cell.q - q0) * step + (cell.r % 2) * (step / 2);
+    const clat = c[1] - (cell.r - r0) * step * 0.86;
+    const isSel = selected === cell.id;
+    return {
+      coords: [hexPoly(clng, clat)],
+      color: isSel ? "#1F2E29" : "#ffffff", weight: isSel ? 2.5 : 1,
+      fillColor: ccColor(cell.cc), fillOpacity: isSel ? 0.95 : 0.7,
+      onClick: () => onSelect(cell.id),
+      tooltip: `<div class="rrm-pop-title">Sel #${cell.id}</div>
+        <div class="rrm-pop-row"><span>Daya dukung</span><b style="color:${ccColor(cell.cc)}">${cell.cc}</b></div>
+        ${cell.lim ? `<div class="rrm-pop-row"><span>Pembatas</span><b>${cell.lim}</b></div>` : ""}`,
+    };
+  });
+
   return (
-    <svg viewBox="0 0 500 340" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <rect width="500" height="340" fill="var(--surface-sunken, #E9EEEA)" />
-      {cells.map(c => {
-        const cx = 45 + c.q * hexW + (c.r % 2) * (hexW / 2);
-        const cy = 40 + c.r * (hexH * 0.78);
-        if (cx > 490 || cy > 330) return null;
-        const isSel = selected === c.id;
-        return (
-          <polygon key={c.id} points={hexPath(cx, cy, 24)}
-            fill={ccColor(c.cc)} fillOpacity={isSel ? 1 : 0.82}
-            stroke={isSel ? "var(--text-primary)" : "#fff"} strokeWidth={isSel ? 2.5 : 1}
-            onClick={() => onSelect(c.id)} style={{ cursor: "pointer" }} />
-        );
-      })}
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={(region && region.id) || "cc"} center={c} zoom={(region && region.zoom) || 11.5} basemap="positron" polygons={polygons} controls={true} />
+    </div>
   );
 }
 

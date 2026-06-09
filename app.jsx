@@ -240,6 +240,9 @@ function App() {
             {route === "feature-dynvuln" && (
               <window.DynamicVulnerability ctx={ctx} setRoute={setRoute} openAI={() => setAiOpen(true)} />
             )}
+            {route === "feature-iklim" && (
+              <window.IklimWilayah ctx={ctx} setRoute={setRoute} openAI={() => setAiOpen(true)} />
+            )}
             {route === "state-patterns" && (
               <window.StatePatterns setRoute={setRoute} />
             )}
@@ -337,6 +340,7 @@ function TweaksUI({ t, setTweak, setOnbOpen, setRoute, setShortcutOpen }) {
         {TweakButton && <TweakButton label="🌊 Real-Time Stream Processor (10.4)" onClick={() => setRoute("feature-stream")} />}
         {TweakButton && <TweakButton label="🔌 Integrasi K/L (FITUR 13.1-13.5)" onClick={() => setRoute("feature-klint")} />}
         {TweakButton && <TweakButton label="🔄 Dynamic Vulnerability SD (FITUR 3.2)" onClick={() => setRoute("feature-dynvuln")} />}
+        {TweakButton && <TweakButton label="🌤️ Iklim Wilayah (FITUR 2.0)" onClick={() => setRoute("feature-iklim")} />}
       </TweakSection>
 
       <TweakSection title="Polish (Sesi 5)" hint="Public site, design system showcase, shortcuts">

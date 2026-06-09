@@ -8,10 +8,14 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const BIO_SPECIES = [
-  { id: "orangutan", emoji: "🦧", name: "Pongo pygmaeus", common: "Orangutan Borneo", iucn: "Critically Endangered", endemic: "Kalimantan", habitat: 23400, shift2050: -28, threat: "Deforestasi, perdagangan" },
-  { id: "anoa", emoji: "🐃", name: "Bubalus depressicornis", common: "Anoa Dataran Rendah", iucn: "Endangered", endemic: "Sulawesi", habitat: 8200, shift2050: -22, threat: "Perburuan, konversi lahan" },
-  { id: "maleo", emoji: "🐦", name: "Macrocephalon maleo", common: "Maleo", iucn: "Critically Endangered", endemic: "Sulawesi", habitat: 4100, shift2050: -34, threat: "Pengambilan telur, habitat loss" },
-  { id: "cendrawasih", emoji: "🦜", name: "Paradisaea apoda", common: "Cendrawasih Besar", iucn: "Least Concern", endemic: "Papua", habitat: 31200, shift2050: -12, threat: "Perdagangan bulu" },
+  { id: "orangutan", emoji: "🦧", name: "Pongo pygmaeus", common: "Orangutan Borneo", iucn: "Critically Endangered", endemic: "Kalimantan", habitat: 23400, shift2050: -28, threat: "Deforestasi, perdagangan", center: [114.0, -0.5], zoom: 7,
+    patches: [{ lng: 113.6, lat: -0.4, km2: 14000 }, { lng: 114.7, lat: 0.2, km2: 9400 }], obs: [[113.7,-0.5,"v"],[114.0,-0.2,"v"],[114.6,0.1,"p"],[113.4,-0.7,"v"]] },
+  { id: "anoa", emoji: "🐃", name: "Bubalus depressicornis", common: "Anoa Dataran Rendah", iucn: "Endangered", endemic: "Sulawesi", habitat: 8200, shift2050: -22, threat: "Perburuan, konversi lahan", center: [120.3, -2.4], zoom: 7,
+    patches: [{ lng: 120.1, lat: -2.5, km2: 5000 }, { lng: 120.7, lat: -2.0, km2: 3200 }], obs: [[120.1,-2.5,"v"],[120.4,-2.3,"v"],[120.7,-2.0,"p"]] },
+  { id: "maleo", emoji: "🐦", name: "Macrocephalon maleo", common: "Maleo", iucn: "Critically Endangered", endemic: "Sulawesi", habitat: 4100, shift2050: -34, threat: "Pengambilan telur, habitat loss", center: [121.6, -0.8], zoom: 7,
+    patches: [{ lng: 121.4, lat: -0.9, km2: 2600 }, { lng: 122.0, lat: -0.5, km2: 1500 }], obs: [[121.4,-0.9,"v"],[121.7,-0.7,"p"],[122.0,-0.5,"v"]] },
+  { id: "cendrawasih", emoji: "🦜", name: "Paradisaea apoda", common: "Cendrawasih Besar", iucn: "Least Concern", endemic: "Papua", habitat: 31200, shift2050: -12, threat: "Perdagangan bulu", center: [138.5, -4.2], zoom: 6.5,
+    patches: [{ lng: 138.0, lat: -4.3, km2: 19000 }, { lng: 139.2, lat: -3.8, km2: 12000 }], obs: [[138.0,-4.3,"v"],[138.6,-4.0,"v"],[139.2,-3.8,"p"],[137.6,-4.6,"v"]] },
 ];
 
 const BIO_OBS = [
@@ -167,29 +171,46 @@ function BiodiversityMapping({ setRoute, ctx, openAI }) {
 
 function BioMap({ sp, layers, period }) {
   const shrink = period === "current" ? 1 : period === "2050" ? (1 + sp.shift2050 / 100) : (1 + sp.shift2050 / 100 * 1.6);
+  const view = sp.center ? { center: sp.center, zoom: sp.zoom || 7 } : { center: [120, -2], zoom: 6 };
+  const radM = (km2) => Math.sqrt(km2 / Math.PI) * 1000; // km² → radius meter
+
+  const areas = [];
+  if (layers.current) {
+    sp.patches.forEach((p, i) => {
+      areas.push({ lng: p.lng, lat: p.lat, radiusM: radM(p.km2), color: "#1B5E3A",
+        fillColor: i === 0 ? "#1B5E3A" : "#88C0A1", fillOpacity: i === 0 ? 0.38 : 0.30, weight: 1,
+        tooltip: `Habitat sesuai · ${p.km2.toLocaleString("id-ID")} km²` });
+    });
+  }
+  if (layers.future) {
+    sp.patches.forEach((p) => {
+      areas.push({ lng: p.lng, lat: p.lat, radiusM: radM(p.km2) * shrink, color: "#C44E37",
+        fillOpacity: 0, weight: 2, dash: "6 4", tooltip: `Proyeksi 2050 (${sp.shift2050}%)` });
+    });
+  }
+  if (layers.refugia) {
+    areas.push({ lng: sp.patches[0].lng, lat: sp.patches[0].lat + 0.25, radiusM: radM(sp.patches[0].km2) * 0.45,
+      color: "#1E6CB5", fillColor: "#1E6CB5", fillOpacity: 0.22, weight: 1, dash: "3 3", tooltip: "Klimat refugia" });
+  }
+
+  const lines = [];
+  if (layers.koridor && sp.patches.length > 1) {
+    lines.push({ coords: [[sp.patches[0].lng, sp.patches[0].lat], [sp.patches[1].lng, sp.patches[1].lat]],
+      color: "#5B8C5A", weight: 4, tooltip: "Koridor ekologis" });
+  }
+
+  const markers = [];
+  if (layers.obs) {
+    (sp.obs || []).forEach(([lng, lat, s]) => {
+      markers.push({ lng, lat, html: `<div style="width:9px;height:9px;border-radius:50%;background:${s === "v" ? "#0E5A78" : "transparent"};border:2px solid ${s === "v" ? "#fff" : "#C18820"};"></div>`,
+        popup: s === "v" ? "Observasi terverifikasi" : "Observasi pending" });
+    });
+  }
+
   return (
-    <svg viewBox="0 0 500 320" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <rect width="500" height="320" fill="var(--surface-sunken,#E9EEEA)" />
-      <path d="M60,70 Q200,50 350,75 Q440,90 450,180 Q400,260 250,265 Q120,260 80,190 Z" fill="var(--surface,#fff)" stroke="var(--border-strong)" strokeWidth="1.2" fillOpacity="0.5" />
-      {/* current habitat (suitability blobs) */}
-      {layers.current && (
-        <g>
-          <ellipse cx="200" cy="150" rx="110" ry="70" fill="#1B5E3A" fillOpacity="0.4" />
-          <ellipse cx="200" cy="150" rx="75" ry="48" fill="#1B5E3A" fillOpacity="0.5" />
-          <ellipse cx="320" cy="170" rx="55" ry="40" fill="#88C0A1" fillOpacity="0.5" />
-        </g>
-      )}
-      {/* future habitat (shrunk) */}
-      {layers.future && (
-        <ellipse cx="200" cy="150" rx={110 * shrink} ry={70 * shrink} fill="none" stroke="#C44E37" strokeWidth="2" strokeDasharray="6 3" />
-      )}
-      {/* corridors */}
-      {layers.koridor && <path d="M200,150 Q260,160 320,170" fill="none" stroke="#5B8C5A" strokeWidth="3" />}
-      {/* citizen obs */}
-      {layers.obs && [[180,140,"v"],[230,165,"v"],[300,175,"p"],[160,170,"v"]].map(([x, y, s], i) => (
-        <circle key={i} cx={x} cy={y} r="4" fill={s === "v" ? "#0E5A78" : "none"} stroke={s === "v" ? "#fff" : "#C18820"} strokeWidth="1.5" />
-      ))}
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={sp.id} center={view.center} zoom={view.zoom} basemap="positron" areas={areas} lines={lines} markers={markers} controls={true} />
+    </div>
   );
 }
 

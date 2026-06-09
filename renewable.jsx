@@ -16,35 +16,35 @@ const RE_TECHS = [
 ];
 
 const RE_REGIONS = [
-  { id: "ntt", name: "NTT", solar: 5.4, wind: 7.2 },
-  { id: "sulsel", name: "Sulawesi Selatan", solar: 4.9, wind: 5.1 },
-  { id: "jabar", name: "Jawa Barat", solar: 4.6, wind: 4.2 },
+  { id: "ntt", name: "NTT", solar: 5.4, wind: 7.2, center: [122.5, -9.6], zoom: 7 },
+  { id: "sulsel", name: "Sulawesi Selatan", solar: 4.9, wind: 5.1, center: [119.9, -4.3], zoom: 6.6 },
+  { id: "jabar", name: "Jawa Barat", solar: 4.6, wind: 4.2, center: [107.6, -6.7], zoom: 7.8 },
 ];
 
-// candidate sites (mock) — id, tech, mw, lcoe, x, y, grid km
+// candidate sites (mock) — id, tech, mw, lcoe, grid km, koordinat asli (lng,lat)
 const RE_SITES = {
   ntt: [
-    { id: 1, tech: "plts", name: "Kupang Timur", mw: 80, lcoe: 62, grid: 2.1, x: 30, y: 60 },
-    { id: 2, tech: "plts", name: "Sumba Tengah", mw: 120, lcoe: 64, grid: 3.8, x: 55, y: 45 },
-    { id: 3, tech: "plts", name: "Flores Barat", mw: 70, lcoe: 68, grid: 4.2, x: 72, y: 38 },
-    { id: 4, tech: "pltb", name: "Sumba Timur Ridge", mw: 90, lcoe: 76, grid: 5.0, x: 62, y: 58 },
-    { id: 5, tech: "pltb", name: "Rote Highland", mw: 60, lcoe: 81, grid: 4.6, x: 38, y: 75 },
-    { id: 6, tech: "plts", name: "Timor Tengah Utara", mw: 150, lcoe: 61, grid: 1.8, x: 45, y: 30 },
-    { id: 7, tech: "pltb", name: "Alor Coastal", mw: 30, lcoe: 84, grid: 6.2, x: 82, y: 52 },
-    { id: 8, tech: "geo", name: "Mataloko Geothermal", mw: 40, lcoe: 70, grid: 3.1, x: 68, y: 48 },
+    { id: 1, tech: "plts", name: "Kupang Timur", mw: 80, lcoe: 62, grid: 2.1, lng: 123.75, lat: -10.15 },
+    { id: 2, tech: "plts", name: "Sumba Tengah", mw: 120, lcoe: 64, grid: 3.8, lng: 119.65, lat: -9.62 },
+    { id: 3, tech: "plts", name: "Flores Barat", mw: 70, lcoe: 68, grid: 4.2, lng: 120.48, lat: -8.65 },
+    { id: 4, tech: "pltb", name: "Sumba Timur Ridge", mw: 90, lcoe: 76, grid: 5.0, lng: 120.30, lat: -9.85 },
+    { id: 5, tech: "pltb", name: "Rote Highland", mw: 60, lcoe: 81, grid: 4.6, lng: 123.12, lat: -10.73 },
+    { id: 6, tech: "plts", name: "Timor Tengah Utara", mw: 150, lcoe: 61, grid: 1.8, lng: 124.45, lat: -9.45 },
+    { id: 7, tech: "pltb", name: "Alor Coastal", mw: 30, lcoe: 84, grid: 6.2, lng: 124.55, lat: -8.27 },
+    { id: 8, tech: "geo", name: "Mataloko Geothermal", mw: 40, lcoe: 70, grid: 3.1, lng: 120.98, lat: -8.78 },
   ],
   sulsel: [
-    { id: 1, tech: "plts", name: "Jeneponto Solar", mw: 100, lcoe: 66, grid: 2.4, x: 35, y: 70 },
-    { id: 2, tech: "pltb", name: "Sidrap Wind", mw: 140, lcoe: 74, grid: 1.9, x: 42, y: 40 },
-    { id: 3, tech: "pltm", name: "Bantaeng Hydro", mw: 25, lcoe: 56, grid: 3.0, x: 55, y: 68 },
-    { id: 4, tech: "plts", name: "Bone Solar Farm", mw: 90, lcoe: 63, grid: 2.8, x: 62, y: 50 },
-    { id: 5, tech: "geo", name: "Toraja Geothermal", mw: 35, lcoe: 72, grid: 4.5, x: 40, y: 22 },
+    { id: 1, tech: "plts", name: "Jeneponto Solar", mw: 100, lcoe: 66, grid: 2.4, lng: 119.73, lat: -5.63 },
+    { id: 2, tech: "pltb", name: "Sidrap Wind", mw: 140, lcoe: 74, grid: 1.9, lng: 119.78, lat: -3.93 },
+    { id: 3, tech: "pltm", name: "Bantaeng Hydro", mw: 25, lcoe: 56, grid: 3.0, lng: 119.98, lat: -5.48 },
+    { id: 4, tech: "plts", name: "Bone Solar Farm", mw: 90, lcoe: 63, grid: 2.8, lng: 120.32, lat: -4.54 },
+    { id: 5, tech: "geo", name: "Toraja Geothermal", mw: 35, lcoe: 72, grid: 4.5, lng: 119.85, lat: -3.08 },
   ],
   jabar: [
-    { id: 1, tech: "plts", name: "Indramayu Solar", mw: 110, lcoe: 64, grid: 1.5, x: 48, y: 35 },
-    { id: 2, tech: "pltm", name: "Cianjur Hydro", mw: 30, lcoe: 55, grid: 2.2, x: 35, y: 60 },
-    { id: 3, tech: "geo", name: "Kamojang Geothermal", mw: 60, lcoe: 68, grid: 1.8, x: 55, y: 58 },
-    { id: 4, tech: "plts", name: "Subang Solar", mw: 70, lcoe: 66, grid: 2.6, x: 60, y: 40 },
+    { id: 1, tech: "plts", name: "Indramayu Solar", mw: 110, lcoe: 64, grid: 1.5, lng: 108.32, lat: -6.33 },
+    { id: 2, tech: "pltm", name: "Cianjur Hydro", mw: 30, lcoe: 55, grid: 2.2, lng: 107.14, lat: -6.82 },
+    { id: 3, tech: "geo", name: "Kamojang Geothermal", mw: 60, lcoe: 68, grid: 1.8, lng: 107.80, lat: -7.14 },
+    { id: 4, tech: "plts", name: "Subang Solar", mw: 70, lcoe: 66, grid: 2.6, lng: 107.76, lat: -6.57 },
   ],
 };
 
@@ -163,7 +163,7 @@ function RenewableEnergy({ setRoute, ctx, openAI }) {
               </div>
             </div>
             <div className="rdtr-map-stage">
-              <REMap sites={sites} picked={portfolio.picked} selected={selected} onSelect={setSelected} running={running} />
+              <REMap sites={sites} picked={portfolio.picked} selected={selected} onSelect={setSelected} running={running} region={region} />
             </div>
           </div>
         </div>
@@ -220,44 +220,35 @@ function RenewableEnergy({ setRoute, ctx, openAI }) {
   );
 }
 
-function REMap({ sites, picked, selected, onSelect, running }) {
+function REMap({ sites, picked, selected, onSelect, running, region }) {
+  const view = (region && region.center) ? region : { center: [120, -7], zoom: 6 };
+  const pickedIds = new Set(picked.map(s => s.id));
+
+  const markers = sites.map(s => {
+    const tech = RE_TECHS.find(t => t.id === s.tech);
+    const isPicked = pickedIds.has(s.id);
+    const isSel = selected === s.id;
+    const sz = isSel ? 20 : isPicked ? 16 : 12;
+    const ring = isPicked ? `box-shadow:0 0 0 ${isSel ? 6 : 4}px ${tech.color}33;` : "";
+    const glyph = s.tech === "pltb" && isPicked ? "≋" : "";
+    const html =
+      `<div style="position:relative;display:flex;align-items:center;justify-content:center;width:${sz}px;height:${sz}px;border-radius:50%;background:${isPicked ? tech.color : "#C7D0CB"};border:2px solid #fff;${ring}cursor:pointer;font-size:10px;color:#fff;font-weight:700;">${glyph}${isSel ? `<div style="position:absolute;bottom:${sz + 2}px;white-space:nowrap;background:rgba(15,31,26,.88);color:#fff;font-size:10px;font-weight:600;padding:2px 6px;border-radius:5px;">${s.name}</div>` : ""}</div>`;
+    return {
+      lng: s.lng, lat: s.lat, html,
+      onClick: () => onSelect(s.id),
+      popup: `<b>${s.name}</b><br>${tech.label}<br>${s.mw} MW · LCOE ${s.lcoe} · grid ${s.grid} km`,
+    };
+  });
+
   return (
-    <svg viewBox="0 0 500 340" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <pattern id="re-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width="500" height="340" fill="var(--surface-sunken, #E9EEEA)" />
-      <rect width="500" height="340" fill="url(#re-grid)" />
-      {/* land */}
-      <path d="M50,80 Q150,50 280,70 T470,90 L460,260 Q320,290 180,270 T40,250 Z" fill="var(--surface,#fff)" stroke="var(--border-strong)" strokeWidth="1.2" fillOpacity="0.5" />
-      {/* grid lines (PLN) */}
-      <path d="M80,160 L200,150 L320,170 L440,150" fill="none" stroke="#C18820" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.6" />
-      <text x="84" y="148" fontSize="9" fill="#8B5F0E">jaringan PLN</text>
-
-      {sites.map(s => {
-        const tech = RE_TECHS.find(t => t.id === s.tech);
-        const isPicked = picked.includes(s);
-        const isSel = selected === s.id;
-        const cx = 60 + s.x * 3.8, cy = 70 + s.y * 1.9;
-        return (
-          <g key={s.id} onClick={() => onSelect(s.id)} style={{ cursor: "pointer" }}>
-            {isPicked && <circle cx={cx} cy={cy} r={isSel ? 18 : 14} fill={tech.color} fillOpacity="0.18" />}
-            <circle cx={cx} cy={cy} r={isSel ? 9 : 7} fill={isPicked ? tech.color : "var(--gray-300)"} stroke="#fff" strokeWidth="2" opacity={isPicked ? 1 : 0.6} />
-            {s.tech === "pltb" && isPicked && <text x={cx} y={cy + 3} fontSize="8" fill="#fff" textAnchor="middle">≋</text>}
-            {isSel && <text x={cx} y={cy - 14} fontSize="10" fill="var(--text-primary)" textAnchor="middle" fontWeight="600">{s.name}</text>}
-          </g>
-        );
-      })}
-
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={view.id || "re"} center={view.center} zoom={view.zoom} basemap="positron" markers={markers} controls={true} />
       {running && (
-        <g>
-          <rect width="500" height="340" fill="rgba(15,31,26,0.4)" />
-          <text x="250" y="170" textAnchor="middle" fontSize="13" fill="#fff">⚙ Solving MILP (OR-Tools)…</text>
-        </g>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "rgba(15,31,26,0.45)", display: "grid", placeItems: "center", color: "#fff", fontSize: 13 }}>
+          <span><span className="whatif-spinner" style={{ marginRight: 8 }} />Solving MILP (OR-Tools)…</span>
+        </div>
       )}
-    </svg>
+    </div>
   );
 }
 

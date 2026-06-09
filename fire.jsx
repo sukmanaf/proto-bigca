@@ -9,10 +9,10 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const FIRE_REGIONS = [
-  { id: "kalbar", name: "Kalimantan Barat", risk: 0.74 },
-  { id: "riau", name: "Riau", risk: 0.81 },
-  { id: "sumsel", name: "Sumatera Selatan", risk: 0.68 },
-  { id: "kalteng", name: "Kalimantan Tengah", risk: 0.79 },
+  { id: "kalbar", name: "Kalimantan Barat", risk: 0.74, center: [110.5, -0.3], zoom: 7.4 },
+  { id: "riau", name: "Riau", risk: 0.81, center: [101.7, 0.5], zoom: 7.4 },
+  { id: "sumsel", name: "Sumatera Selatan", risk: 0.68, center: [104.0, -3.2], zoom: 7.4 },
+  { id: "kalteng", name: "Kalimantan Tengah", risk: 0.79, center: [113.4, -1.8], zoom: 7.2 },
 ];
 
 // 7-day forecast probability multipliers
@@ -225,40 +225,54 @@ function FireFactor({ label, val, pct, color, raw }) {
 }
 
 function FireMap({ region, dayRisk, layers, day }) {
-  // grid cells colored by probability (varies with seed + dayRisk)
-  const cells = [];
-  for (let r = 0; r < 6; r++) for (let c = 0; c < 8; c++) {
-    const seed = ((r * 8 + c) * 37 % 100) / 100;
-    const prob = Math.min(0.95, Math.max(0.05, dayRisk * (0.5 + seed)));
-    cells.push({ r, c, prob });
+  const c = region.center || [110.5, -0.3];
+  // grid sel risiko di sekitar pusat provinsi (8×6 ~ 0.07° per sel)
+  const circles = [];
+  if (layers.prob) {
+    const step = 0.085;
+    for (let r = 0; r < 6; r++) for (let col = 0; col < 8; col++) {
+      const seed = ((r * 8 + col) * 37 % 100) / 100;
+      const prob = Math.min(0.95, Math.max(0.05, dayRisk * (0.5 + seed)));
+      const lng = c[0] + (col - 3.5) * step;
+      const lat = c[1] + (2.5 - r) * step;
+      circles.push({
+        lng, lat, radius: 13, color: fireColor(prob),
+        fillOpacity: 0.2 + prob * 0.55,
+        tooltip: `Prob. karhutla: <b style="color:${fireColor(prob)}">${(prob * 100).toFixed(0)}%</b>`,
+      });
+    }
   }
+
+  // hotspot VIIRS aktif (pulse) — jumlah skala dayRisk
+  const markers = [];
+  if (layers.hotspot) {
+    const spots = [[-0.18, 0.12], [0.05, -0.05], [0.22, -0.20], [-0.25, -0.10], [0.30, 0.18]];
+    spots.slice(0, Math.ceil(dayRisk * 5)).forEach(([dl, dt]) => {
+      markers.push({ lng: c[0] + dl, lat: c[1] + dt, html: `<div class="fire-hot"><span></span><i></i></div>`, popup: "Hotspot VIIRS aktif" });
+    });
+  }
+
+  // overlay gambut & perimeter historis (poligon)
+  const polygons = [];
+  if (layers.peat) {
+    const pe = 0.30;
+    polygons.push({
+      coords: [[[c[0] - pe, c[1] + pe * .6], [c[0] + pe, c[1] + pe * .7], [c[0] + pe * 1.1, c[1] - pe * .4], [c[0] - pe * .8, c[1] - pe * .5]]],
+      color: "#6B4309", fillColor: "#6B4309", fillOpacity: 0.10, weight: 1.5, dash: "5 3", tooltip: "Lahan gambut",
+    });
+  }
+  if (layers.perim) {
+    const pr = 0.16;
+    polygons.push({
+      coords: [[[c[0] - pr, c[1] + pr], [c[0] + pr, c[1] + pr * .8], [c[0] + pr * 1.2, c[1] - pr], [c[0] - pr * .7, c[1] - pr * .9]]],
+      color: "#1F2E29", fillColor: "#1F2E29", fillOpacity: 0.04, weight: 1.5, dash: "3 3", tooltip: "Perimeter kebakaran historis",
+    });
+  }
+
   return (
-    <svg viewBox="0 0 500 360" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <rect width="500" height="360" fill="var(--surface-sunken, #E9EEEA)" />
-      {/* region outline */}
-      <path d="M60,50 L440,50 L450,310 L70,310 Z" fill="var(--surface,#fff)" stroke="var(--border-strong)" strokeWidth="1.5" fillOpacity="0.3" />
-      {/* probability grid */}
-      {layers.prob && cells.map((cell, i) => (
-        <rect key={i} x={70 + cell.c * 46} y={58 + cell.r * 42} width="44" height="40"
-          fill={fireColor(cell.prob)} fillOpacity={0.25 + cell.prob * 0.55} stroke="#fff" strokeWidth="0.5" />
-      ))}
-      {/* peatland overlay */}
-      {layers.peat && <path d="M120,120 Q200,100 280,130 T420,150 L420,230 Q300,250 180,230 T100,210 Z" fill="none" stroke="#6B4309" strokeWidth="1.5" strokeDasharray="5 3" opacity="0.7" />}
-      {/* hotspots */}
-      {layers.hotspot && [[180,140],[260,170],[320,210],[150,200],[380,120]].slice(0, Math.ceil(dayRisk * 5)).map(([x, y], i) => (
-        <g key={i}>
-          <circle cx={x} cy={y} r="9" fill="none" stroke="#8B1A1A" strokeWidth="1.5">
-            <animate attributeName="r" from="5" to="13" dur="1.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" from="1" to="0" dur="1.4s" repeatCount="indefinite" />
-          </circle>
-          <circle cx={x} cy={y} r="3.5" fill="#8B1A1A" />
-        </g>
-      ))}
-      {/* smoke plume */}
-      {layers.smoke && <path d="M260,170 Q330,150 400,120 Q440,105 470,90" fill="none" stroke="#6B7B74" strokeWidth="14" strokeLinecap="round" opacity="0.3" />}
-      {/* historic perimeter */}
-      {layers.perim && <path d="M160,150 Q230,135 290,160 T360,190 Q300,230 220,215 T150,195 Z" fill="none" stroke="#1F2E29" strokeWidth="1.5" strokeDasharray="3 3" opacity="0.5" />}
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={region.id} center={c} zoom={region.zoom || 7.4} basemap="positron" circles={circles} polygons={polygons} markers={markers} controls={true} />
+    </div>
   );
 }
 

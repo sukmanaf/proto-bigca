@@ -24,12 +24,12 @@ const COASTAL_LAYERS = [
 
 // Coastline segments (mock) — ~1km each
 const COASTAL_SEGMENTS = [
-  { id: "S-042", kec: "Sayung", km: 1.2, cvi: 0.85, svi: 0.72, eri: 0.18, subsidence: 9.4, density: 3800, mangrove: 7 },
-  { id: "S-043", kec: "Sayung", km: 1.1, cvi: 0.78, svi: 0.68, eri: 0.24, subsidence: 8.1, density: 3200, mangrove: 12 },
-  { id: "S-044", kec: "Wedung", km: 1.3, cvi: 0.62, svi: 0.55, eri: 0.41, subsidence: 5.2, density: 2100, mangrove: 34 },
-  { id: "S-045", kec: "Wedung", km: 1.0, cvi: 0.48, svi: 0.44, eri: 0.58, subsidence: 3.8, density: 1400, mangrove: 52 },
-  { id: "S-046", kec: "Wedung", km: 1.2, cvi: 0.35, svi: 0.38, eri: 0.71, subsidence: 2.1, density: 900, mangrove: 78 },
-  { id: "S-047", kec: "Bonang", km: 1.1, cvi: 0.41, svi: 0.49, eri: 0.62, subsidence: 2.9, density: 1600, mangrove: 64 },
+  { id: "S-042", kec: "Sayung", km: 1.2, cvi: 0.85, svi: 0.72, eri: 0.18, subsidence: 9.4, density: 3800, mangrove: 7, lng: 110.475, lat: -6.945 },
+  { id: "S-043", kec: "Sayung", km: 1.1, cvi: 0.78, svi: 0.68, eri: 0.24, subsidence: 8.1, density: 3200, mangrove: 12, lng: 110.482, lat: -6.918 },
+  { id: "S-044", kec: "Wedung", km: 1.3, cvi: 0.62, svi: 0.55, eri: 0.41, subsidence: 5.2, density: 2100, mangrove: 34, lng: 110.488, lat: -6.872 },
+  { id: "S-045", kec: "Wedung", km: 1.0, cvi: 0.48, svi: 0.44, eri: 0.58, subsidence: 3.8, density: 1400, mangrove: 52, lng: 110.495, lat: -6.832 },
+  { id: "S-046", kec: "Wedung", km: 1.2, cvi: 0.35, svi: 0.38, eri: 0.71, subsidence: 2.1, density: 900, mangrove: 78, lng: 110.503, lat: -6.800 },
+  { id: "S-047", kec: "Bonang", km: 1.1, cvi: 0.41, svi: 0.49, eri: 0.62, subsidence: 2.9, density: 1600, mangrove: 64, lng: 110.522, lat: -6.836 },
 ];
 
 function ccviOf(s) {
@@ -216,58 +216,47 @@ function CoastalVulnerability({ setRoute, ctx, openAI }) {
 }
 
 function CoastalMap({ segments, selected, onSelect, overlays, computing }) {
-  // coastline path split into segments along a curve
-  const pts = [
-    [90, 90], [150, 120], [210, 130], [270, 165], [320, 220], [350, 285], [380, 330],
-  ];
+  // garis pantai per-segmen diwarnai CCVI
+  const lines = [];
+  for (let i = 0; i < segments.length - 1; i++) {
+    const v = ccviOf(segments[i]);
+    lines.push({
+      coords: [[segments[i].lng, segments[i].lat], [segments[i + 1].lng, segments[i + 1].lat]],
+      color: ccviColor(v), weight: selected === segments[i].id ? 9 : 6,
+      onClick: () => onSelect(segments[i].id),
+      tooltip: `${segments[i].id} · ${segments[i].kec} · CCVI ${v} (${ccviCat(v)})`,
+    });
+  }
+  // titik per-segmen (klik + seleksi + overlay)
+  const circles = segments.map(s => {
+    const v = ccviOf(s);
+    const isSel = selected === s.id;
+    return {
+      lng: s.lng, lat: s.lat, radius: isSel ? 9 : 6,
+      color: ccviColor(v), fillOpacity: isSel ? 1 : 0.85,
+      onClick: () => onSelect(s.id),
+      tooltip: `<div class="rrm-pop-title">${s.id} · ${s.kec}</div>
+        <div class="rrm-pop-row"><span>CCVI</span><b style="color:${ccviColor(v)}">${v} (${ccviCat(v)})</b></div>
+        <div class="rrm-pop-row"><span>Subsidence</span><b>${s.subsidence} cm/th</b></div>
+        <div class="rrm-pop-row"><span>Mangrove</span><b>${s.mangrove}%</b></div>`,
+    };
+  });
+  // overlay marker: mangrove tinggi (hijau) & populasi padat (merah)
+  const markers = [];
+  if (overlays.mangrove) segments.filter(s => s.mangrove > 40).forEach(s =>
+    markers.push({ lng: s.lng + 0.012, lat: s.lat + 0.006, html: `<div style="width:10px;height:10px;border-radius:50%;background:#2F7D5E;opacity:.7;border:1px solid #fff;"></div>` }));
+  if (overlays.pop) segments.filter(s => s.density > 2500).forEach(s =>
+    markers.push({ lng: s.lng - 0.012, lat: s.lat - 0.006, html: `<div style="width:8px;height:8px;border-radius:50%;background:#C44E37;border:1px solid #fff;"></div>` }));
+
   return (
-    <svg viewBox="0 0 500 360" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <pattern id="co-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-        </pattern>
-      </defs>
-      <rect width="500" height="360" fill="var(--surface-sunken, #E9EEEA)" />
-      <rect width="500" height="360" fill="url(#co-grid)" />
-      {/* sea */}
-      <path d="M90,90 L150,120 L210,130 L270,165 L320,220 L350,285 L380,330 L500,360 L500,0 L500,0 L90,0 Z" fill="#BAD9E8" fillOpacity="0.4" />
-      {/* land label */}
-      <text x="130" y="280" fontSize="11" fill="var(--text-muted, #6B7B74)">Daratan</text>
-      <text x="430" y="90" fontSize="11" fill="#0E5A78">Laut</text>
-
-      {/* mangrove overlay */}
-      {overlays.mangrove && segments.map((s, i) => s.mangrove > 40 && (
-        <circle key={"m"+i} cx={pts[i][0] + 12} cy={pts[i][1] - 12} r="7" fill="#2F7D5E" fillOpacity="0.5" />
-      ))}
-
-      {/* coastline segments */}
-      {segments.map((s, i) => {
-        if (i >= pts.length - 1) return null;
-        const v = ccviOf(s);
-        const [x1, y1] = pts[i], [x2, y2] = pts[i + 1];
-        const isSel = selected === s.id;
-        return (
-          <g key={s.id} onClick={() => onSelect(s.id)} style={{ cursor: "pointer" }}>
-            <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={ccviColor(v)} strokeWidth={isSel ? 9 : 6} strokeLinecap="round" opacity={isSel ? 1 : 0.85} />
-            {isSel && <circle cx={(x1+x2)/2} cy={(y1+y2)/2} r="5" fill="#fff" stroke={ccviColor(v)} strokeWidth="2" />}
-          </g>
-        );
-      })}
-
-      {/* population overlay dots */}
-      {overlays.pop && segments.map((s, i) => i < pts.length - 1 && s.density > 2500 && (
-        <circle key={"p"+i} cx={pts[i][0] - 14} cy={pts[i][1] + 14} r="4" fill="#C44E37" />
-      ))}
-      {/* asset overlay */}
-      {overlays.asset && <rect x="300" y="240" width="8" height="8" fill="#1F2E29" />}
-
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap center={[110.50, -6.87]} zoom={11.2} basemap="positron" lines={lines} circles={circles} markers={markers} controls={true} />
       {computing && (
-        <g>
-          <rect x="180" y="20" width="140" height="26" rx="13" fill="var(--surface-elevated, #fff)" stroke="var(--border-subtle)" />
-          <text x="250" y="37" textAnchor="middle" fontSize="11" fill="var(--text-secondary, #3E4F49)">⚙ recompute CCVI…</text>
-        </g>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "rgba(15,31,26,0.4)", display: "grid", placeItems: "center", color: "#fff", fontSize: 13 }}>
+          <span><span className="whatif-spinner" style={{ marginRight: 8 }} />recompute CCVI…</span>
+        </div>
       )}
-    </svg>
+    </div>
   );
 }
 

@@ -8,10 +8,10 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const SLR_REGIONS = [
-  { id: "semarang", name: "Kota Semarang", slr: 6.7, subsidence: 21.3, combined: 28 },
-  { id: "demak", name: "Kab. Demak", slr: 6.2, subsidence: 9.4, combined: 15.6 },
-  { id: "makassar", name: "Kota Makassar", slr: 5.8, subsidence: 3.1, combined: 8.9 },
-  { id: "jakarta", name: "DKI Jakarta Utara", slr: 6.5, subsidence: 18.0, combined: 24.5 },
+  { id: "semarang", name: "Kota Semarang", slr: 6.7, subsidence: 21.3, combined: 28, center: [110.42, -6.95], coast: [110.42, -6.90], zoom: 11.5 },
+  { id: "demak", name: "Kab. Demak", slr: 6.2, subsidence: 9.4, combined: 15.6, center: [110.50, -6.89], coast: [110.49, -6.84], zoom: 11.5 },
+  { id: "makassar", name: "Kota Makassar", slr: 5.8, subsidence: 3.1, combined: 8.9, center: [119.41, -5.13], coast: [119.39, -5.13], zoom: 11.5 },
+  { id: "jakarta", name: "DKI Jakarta Utara", slr: 6.5, subsidence: 18.0, combined: 24.5, center: [106.85, -6.12], coast: [106.85, -6.08], zoom: 11.5 },
 ];
 
 const SLR_SCN = [
@@ -141,33 +141,41 @@ function SLRSubsidence({ setRoute, ctx, openAI }) {
 }
 
 function SLRMap({ region, cs, layers }) {
+  const c = region.center || [110, -6.9];
+  const coast = region.coast || [c[0], c[1] + 0.05];
   const inundDepth = cs.rise / 62; // 0..1
+  const off = (dlng, dlat) => [c[0] + dlng, c[1] + dlat];
+
+  const areas = [];
+  // zona inundasi (tumbuh dengan skenario) — biru di sisi pesisir
+  if (layers.inundasi) areas.push({
+    lng: coast[0], lat: coast[1], radiusM: 2200 + inundDepth * 6500,
+    color: "#1E4E6B", fillColor: "#1E4E6B", fillOpacity: 0.42, weight: 1,
+    tooltip: `Zona inundasi · SLR ${cs.label || cs.rise + " cm"}`,
+  });
+  // subsidence (merah, intensitas by laju) — sisi daratan
+  if (layers.subsidence) areas.push({
+    lng: c[0], lat: c[1] - 0.02, radiusM: 1500 + region.subsidence * 220,
+    color: "#C44E37", fillColor: "#C44E37", fillOpacity: Math.min(0.4, region.subsidence / 60), weight: 1, dash: "4 3",
+    tooltip: `Subsidence ${region.subsidence} cm/th`,
+  });
+
+  const markers = [];
+  // tide gauges sepanjang pesisir
+  if (layers.tide) [[-0.035, 0.005], [0, 0.008], [0.035, 0.004]].forEach(([dl, dt], i) => {
+    const [lng, lat] = [coast[0] + dl, coast[1] + dt];
+    markers.push({ lng, lat, html: `<div style="width:11px;height:11px;border-radius:50%;background:#0E5A78;border:2px solid #fff;"></div>`, popup: `Tide gauge TG-${i + 1}` });
+  });
+  // GNSS CORS
+  if (layers.gnss) [[-0.02, -0.025], [0.025, -0.02]].forEach(([dl, dt], i) => {
+    const [lng, lat] = off(dl, dt);
+    markers.push({ lng, lat, html: `<div style="width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:11px solid #C18820;filter:drop-shadow(0 0 1px #fff);"></div>`, popup: `GNSS CORS-${i + 1}` });
+  });
+
   return (
-    <svg viewBox="0 0 500 320" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <rect width="500" height="320" fill="#BAD9E8" fillOpacity="0.3" />
-      {/* land */}
-      <path d="M0,140 Q120,120 250,135 Q380,150 500,130 L500,320 L0,320 Z" fill="var(--surface,#fff)" stroke="var(--border-strong)" strokeWidth="1" />
-      {/* inundation zone (grows with scenario) */}
-      {layers.inundasi && (
-        <path d={`M0,140 Q120,120 250,135 Q380,150 500,130 L500,${150 + inundDepth * 60} Q380,${175 + inundDepth*55} 250,${165 + inundDepth*55} Q120,${155 + inundDepth*50} 0,${175 + inundDepth*50} Z`}
-          fill="#1E4E6B" fillOpacity="0.5" />
-      )}
-      {/* subsidence gradient (color cells) */}
-      {layers.subsidence && Array.from({ length: 8 }).map((_, i) => {
-        const sev = (region.subsidence / 25) * (0.5 + (i % 3) * 0.25);
-        return <rect key={i} x={20 + i * 58} y="200" width="54" height="50" fill="#C44E37" fillOpacity={sev * 0.5} />;
-      })}
-      {/* tide gauges */}
-      {layers.tide && [[90,150],[260,148],[410,140]].map(([x, y], i) => (
-        <g key={i}><circle cx={x} cy={y} r="5" fill="#0E5A78" stroke="#fff" strokeWidth="1.5" /><text x={x} y={y - 9} fontSize="8" fill="var(--text-primary)" textAnchor="middle">TG-{i+1}</text></g>
-      ))}
-      {/* GNSS CORS */}
-      {layers.gnss && [[160,175],[340,170]].map(([x, y], i) => (
-        <path key={i} d={`M${x},${y-7} L${x+6},${y+5} L${x-6},${y+5} Z`} fill="#C18820" stroke="#fff" strokeWidth="1" />
-      ))}
-      <text x="20" y="30" fontSize="11" fill="#0E5A78">Laut</text>
-      <text x="20" y="305" fontSize="11" fill="var(--text-muted,#6B7B74)">Daratan (subsidence overlay)</text>
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={region.id} center={c} zoom={region.zoom || 11.5} basemap="positron" areas={areas} markers={markers} controls={true} />
+    </div>
   );
 }
 

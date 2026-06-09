@@ -251,45 +251,65 @@ function RDTRToolbox({ setRoute, ctx, openAI }) {
   );
 }
 
+// Transform SVG path (viewBox ~130-400 x, 75-330 y) → koordinat asli area RDTR Makassar
+function rdtrPathToCoords(path) {
+  const nums = (path.match(/-?\d+\.?\d*/g) || []).map(Number);
+  const pts = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) {
+    const x = nums[i], y = nums[i + 1];
+    const lng = 119.40 + (x - 130) / (400 - 130) * (119.56 - 119.40);
+    const lat = -5.06 + (y - 75) / (330 - 75) * (-5.22 - (-5.06));
+    pts.push([lng, lat]);
+  }
+  return pts;
+}
+
 function RDTRMap({ zones, selected, onSelect, constraints }) {
   const perColor = {};
   RDTR_PERUNTUKAN.forEach(p => perColor[p.id] = p.color);
+  const perLabel = {};
+  RDTR_PERUNTUKAN.forEach(p => perLabel[p.id] = p.label);
+
+  const polygons = zones.map(z => {
+    const isReloc = z.relocate || z.suit === "N";
+    const isSel = selected === z.id;
+    return {
+      coords: [rdtrPathToCoords(z.path)],
+      color: isReloc ? "#8B1A1A" : (perColor[z.per] || "#999"),
+      fillColor: isReloc ? "#8B1A1A" : (perColor[z.per] || "#999"),
+      fillOpacity: isReloc ? 0.55 : 0.6,
+      stroke: isSel ? "#1F2E29" : "#ffffff",
+      weight: isSel ? 3 : 1.2,
+      dash: isReloc ? "5 3" : null,
+      onClick: () => onSelect(z.id),
+      tooltip: `<div class="rrm-pop-title">${z.label}${z.warn ? " ⚠" : ""}</div>
+        <div class="rrm-pop-row"><span>Peruntukan</span><b>${perLabel[z.per] || z.per}</b></div>
+        <div class="rrm-pop-row"><span>Kesesuaian</span><b>${z.suit}</b></div>
+        <div class="rrm-pop-row"><span>Luas</span><b>${z.ha} ha</b></div>
+        <div class="rrm-pop-row"><span>Banjir</span><b>${z.flood}</b></div>`,
+    };
+  });
+
+  // jalur evakuasi + sempadan pantai (garis)
+  const lines = [
+    { coords: [rdtrPathToCoords("M180,160"), rdtrPathToCoords("M250,210"), rdtrPathToCoords("M320,250"), rdtrPathToCoords("M380,300")].map(p => p[0]),
+      color: "#1F2E29", weight: 3, tooltip: "Jalur evakuasi" },
+  ];
+  if (constraints && constraints.sempadan) {
+    lines.push({ coords: [rdtrPathToCoords("M120,300")[0], rdtrPathToCoords("M290,305")[0], rdtrPathToCoords("M420,300")[0]],
+      color: "#0E5A78", weight: 2, dash: "6 3", tooltip: "Sempadan pantai 100m" });
+  }
+  // shelter marker
+  const markers = [{
+    ...(() => { const [lng, lat] = rdtrPathToCoords("M380,300")[0]; return { lng, lat }; })(),
+    html: `<div style="display:flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid #1F2E29;"><div style="width:5px;height:5px;border-radius:50%;background:#1F2E29;"></div></div>`,
+    popup: "Shelter kapasitas 5.000",
+  }];
+
   return (
-    <svg viewBox="0 0 500 360" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <pattern id="rdtr-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-        </pattern>
-        <pattern id="rdtr-hatch" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="7" stroke="#8B1A1A" strokeWidth="1.4" opacity="0.5" />
-        </pattern>
-      </defs>
-      <rect width="500" height="360" fill="var(--surface-sunken, #E9EEEA)" />
-      <rect width="500" height="360" fill="url(#rdtr-grid)" />
-
-      {/* zones */}
-      {zones.map(z => (
-        <g key={z.id} onClick={() => onSelect(z.id)} style={{ cursor: "pointer" }}>
-          <path d={z.path} fill={z.relocate ? "url(#rdtr-hatch)" : perColor[z.per]}
-            fillOpacity={z.relocate ? 0.9 : 0.7}
-            stroke={selected === z.id ? "var(--text-primary)" : "#fff"}
-            strokeWidth={selected === z.id ? 2.5 : 1.2} />
-          {z.warn && <text x={parseInt(z.path.match(/M(\d+)/)[1]) + 20} y={parseInt(z.path.match(/M\d+,(\d+)/)[1]) + 30} fontSize="14" fill="#8B1A1A">⚠</text>}
-        </g>
-      ))}
-
-      {/* coastal buffer line */}
-      {constraints.sempadan && (
-        <path d="M120,300 Q200,290 290,305 T420,300" fill="none" stroke="#0E5A78" strokeWidth="2" strokeDasharray="6 3" />
-      )}
-      {/* evacuation route */}
-      <path d="M180,160 L250,210 L320,250 L380,300" fill="none" stroke="#1F2E29" strokeWidth="2.5" />
-      <circle cx="380" cy="300" r="8" fill="none" stroke="#1F2E29" strokeWidth="2" />
-      <circle cx="380" cy="300" r="3" fill="#1F2E29" />
-      <text x="392" y="303" fontSize="9" fill="var(--text-primary)">Shelter 5.000</text>
-
-      <text x="250" y="345" textAnchor="middle" fontSize="9" fill="var(--text-muted, #6B7B74)">━━ jalur evakuasi · ┄┄ sempadan pantai 100m</text>
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap center={[119.48, -5.145]} zoom={12.6} basemap="positron" polygons={polygons} lines={lines} markers={markers} controls={true} />
+    </div>
   );
 }
 

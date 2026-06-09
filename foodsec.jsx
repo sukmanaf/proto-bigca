@@ -21,14 +21,14 @@ const FS_SCENARIOS = [
   { id: "2050", label: "2050 SSP2-4.5", mult: 1.42 },
 ];
 
-// kab impact cells (mock) — name, lossPct, cause, x, y, w, h
+// kab impact cells (mock) — name, lossPct, cause, koordinat asli (lng,lat)
 const FS_KABS = [
-  { id: "demak", name: "Demak", loss: 30, cause: "banjir rob + drainase buruk", petani: 12000, x: 32, y: 30 },
-  { id: "pekalongan", name: "Pekalongan", loss: 42, cause: "rob pesisir", petani: 9400, x: 18, y: 24 },
-  { id: "grobogan", name: "Grobogan", loss: 18, cause: "kekeringan MT-2", petani: 7200, x: 55, y: 42 },
-  { id: "kudus", name: "Kudus", loss: 25, cause: "banjir Sungai Wulan", petani: 5100, x: 44, y: 28 },
-  { id: "pati", name: "Pati", loss: 12, cause: "kekeringan ringan", petani: 6800, x: 58, y: 22 },
-  { id: "sragen", name: "Sragen", loss: 8, cause: "aman relatif", petani: 4200, x: 68, y: 56 },
+  { id: "demak", name: "Demak", loss: 30, cause: "banjir rob + drainase buruk", petani: 12000, lng: 110.64, lat: -6.89 },
+  { id: "pekalongan", name: "Pekalongan", loss: 42, cause: "rob pesisir", petani: 9400, lng: 109.69, lat: -6.89 },
+  { id: "grobogan", name: "Grobogan", loss: 18, cause: "kekeringan MT-2", petani: 7200, lng: 110.91, lat: -7.08 },
+  { id: "kudus", name: "Kudus", loss: 25, cause: "banjir Sungai Wulan", petani: 5100, lng: 110.84, lat: -6.80 },
+  { id: "pati", name: "Pati", loss: 12, cause: "kekeringan ringan", petani: 6800, lng: 111.04, lat: -6.75 },
+  { id: "sragen", name: "Sragen", loss: 8, cause: "aman relatif", petani: 4200, lng: 111.02, lat: -7.43 },
 ];
 
 function lossColor(p) {
@@ -193,36 +193,30 @@ function FoodSecurity({ setRoute, ctx, openAI }) {
 }
 
 function FSMap({ kabs, selected, onSelect, hazards, calculating }) {
+  const markers = kabs.map(k => {
+    const isSel = selected === k.id;
+    const sz = Math.round(30 + k.loss * 0.7);
+    const col = lossColor(k.loss);
+    const html =
+      `<div style="position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;width:${sz}px;height:${sz}px;border-radius:50%;background:${col};opacity:${isSel ? 0.95 : 0.78};border:${isSel ? 3 : 1.5}px solid ${isSel ? "#1F2E29" : "#fff"};cursor:pointer;color:#fff;line-height:1.05;">
+         <span style="font-size:10px;font-weight:700;">${k.name}</span>
+         <span style="font-size:9px;">${k.loss}%</span>
+       </div>`;
+    return {
+      lng: k.lng, lat: k.lat, html, onClick: () => onSelect(k.id),
+      popup: `<b>${k.name}</b><br>Kehilangan hasil: ${k.loss}%<br>${k.cause}<br>${k.petani.toLocaleString("id-ID")} petani`,
+    };
+  });
+
   return (
-    <svg viewBox="0 0 500 320" className="rdtr-svg" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <pattern id="fs-rice" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-          <line x1="0" y1="0" x2="0" y2="8" stroke="#5B8C5A" strokeWidth="1" opacity="0.25" />
-        </pattern>
-      </defs>
-      <rect width="500" height="320" fill="var(--surface-sunken, #E9EEEA)" />
-      {/* province outline filled with rice pattern */}
-      <path d="M60,60 L440,50 L450,240 L70,250 Z" fill="url(#fs-rice)" stroke="var(--border-strong)" strokeWidth="1.2" />
-      {/* kab impact blocks */}
-      {kabs.map(k => {
-        const cx = 60 + k.x * 3.8, cy = 60 + k.y * 2.4;
-        const isSel = selected === k.id;
-        const r = 22 + k.loss * 0.4;
-        return (
-          <g key={k.id} onClick={() => onSelect(k.id)} style={{ cursor: "pointer" }}>
-            <circle cx={cx} cy={cy} r={r} fill={lossColor(k.loss)} fillOpacity={isSel ? 0.85 : 0.6} stroke={isSel ? "var(--text-primary)" : "#fff"} strokeWidth={isSel ? 2.5 : 1.2} />
-            <text x={cx} y={cy - 2} fontSize="10" fill="#fff" textAnchor="middle" fontWeight="600">{k.name}</text>
-            <text x={cx} y={cy + 11} fontSize="9" fill="#fff" textAnchor="middle">{k.loss}%</text>
-          </g>
-        );
-      })}
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap center={[110.6, -7.0]} zoom={8.2} basemap="positron" markers={markers} controls={true} />
       {calculating && (
-        <g>
-          <rect width="500" height="320" fill="rgba(15,31,26,0.4)" />
-          <text x="250" y="160" textAnchor="middle" fontSize="13" fill="#fff">⚙ DSSAT yield + impact functions…</text>
-        </g>
+        <div style={{ position: "absolute", inset: 0, zIndex: 600, background: "rgba(15,31,26,0.45)", display: "grid", placeItems: "center", color: "#fff", fontSize: 13 }}>
+          <span><span className="whatif-spinner" style={{ marginRight: 8 }} />DSSAT yield + impact functions…</span>
+        </div>
       )}
-    </svg>
+    </div>
   );
 }
 

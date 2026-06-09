@@ -9,11 +9,23 @@ const Icon = window.Icon;
 const tr = window.tr;
 
 const DAS_REGIONS = [
-  { id: "citarum", name: "DAS Citarum", prov: "Jabar", areaKm2: 6614, basePop: 412000, baseFloodKm2: 2340, asetT: 1.8, taniKm2: 187, sekolah: 87, rs: 12 },
-  { id: "cenranae", name: "DAS Cenranae (Wajo)", prov: "Sulsel", areaKm2: 2890, basePop: 142000, baseFloodKm2: 880, asetT: 0.62, taniKm2: 94, sekolah: 38, rs: 5 },
-  { id: "bengawan", name: "DAS Bengawan Solo", prov: "Jateng/Jatim", areaKm2: 16100, basePop: 680000, baseFloodKm2: 3120, asetT: 2.9, taniKm2: 412, sekolah: 142, rs: 24 },
-  { id: "kapuas", name: "DAS Kapuas", prov: "Kalbar", areaKm2: 98740, basePop: 240000, baseFloodKm2: 1840, asetT: 0.9, taniKm2: 156, sekolah: 54, rs: 8 },
+  { id: "citarum", name: "DAS Citarum", prov: "Jabar", areaKm2: 6614, basePop: 412000, baseFloodKm2: 2340, asetT: 1.8, taniKm2: 187, sekolah: 87, rs: 12, center: [107.45, -6.92], zoom: 9.3 },
+  { id: "cenranae", name: "DAS Cenranae (Wajo)", prov: "Sulsel", areaKm2: 2890, basePop: 142000, baseFloodKm2: 880, asetT: 0.62, taniKm2: 94, sekolah: 38, rs: 5, center: [120.05, -4.00], zoom: 9.6 },
+  { id: "bengawan", name: "DAS Bengawan Solo", prov: "Jateng/Jatim", areaKm2: 16100, basePop: 680000, baseFloodKm2: 3120, asetT: 2.9, taniKm2: 412, sekolah: 142, rs: 24, center: [111.30, -7.40], zoom: 8.6 },
+  { id: "kapuas", name: "DAS Kapuas", prov: "Kalbar", areaKm2: 98740, basePop: 240000, baseFloodKm2: 1840, asetT: 0.9, taniKm2: 156, sekolah: 54, rs: 8, center: [110.40, -0.02], zoom: 8.4 },
 ];
+
+// Transform titik SVG (pusat ~250,200) → koordinat geografis sekitar pusat DAS
+function fmXY(x, y, center, span) {
+  const sp = span || 0.20;
+  return [center[0] + (x - 250) / 270 * sp, center[1] - (y - 200) / 270 * sp];
+}
+function fmPath(path, center, span) {
+  const nums = (path.match(/-?\d+\.?\d*/g) || []).map(Number);
+  const pts = [];
+  for (let i = 0; i + 1 < nums.length; i += 2) pts.push(fmXY(nums[i], nums[i + 1], center, span));
+  return pts;
+}
 
 const RETURN_PERIODS = [
   { id: 100, label: "100-yr", mult: 1.0 },
@@ -280,7 +292,7 @@ function FmStat({ icon, label, value, hi, inline, rsVal }) {
 }
 
 function FloodMap({ region, factor, swipe, layers, running, mode }) {
-  // flood zones scale with factor; swipe reveals future extent
+  // flood zones scale with factor; swipe controls future reveal (opacity)
   const baseZones = [
     { d: "M150,180 Q200,150 260,175 T380,185 L390,240 Q300,260 200,250 T120,235 Z", depth: 2 },
     { d: "M180,250 Q260,235 340,255 L350,300 Q270,315 190,300 Z", depth: 1 },
@@ -288,64 +300,45 @@ function FloodMap({ region, factor, swipe, layers, running, mode }) {
   ];
   const depthColors = ["#BAD9E8", "#5FA3C7", "#1E4E6B"];
   const futureScale = 1 + (factor - 1) * 0.6;
-  const revealFuture = swipe / 100;
+  const futOpacity = (swipe / 100) * 0.7;
+  const c = region.center || [110, -2];
+  const scaleXY = (x, y, s) => [250 + (x - 250) * s, 180 + (y - 180) * s];
+
+  const polygons = [];
+  // DAS outline
+  polygons.push({ coords: [fmPath("M90,60 L400,50 L420,180 L380,320 L240,340 L120,310 L80,180 Z", c)],
+    color: "#9DACA4", fillColor: "#ffffff", fillOpacity: 0.06, weight: 1.5 });
+  // current flood
+  if (layers.cur100) baseZones.forEach((z, i) => {
+    polygons.push({ coords: [fmPath(z.d, c)], color: depthColors[z.depth], fillColor: depthColors[z.depth], fillOpacity: 0.6, weight: 0.6,
+      tooltip: `Genangan ${["dangkal","sedang","dalam"][z.depth]} · 100-yr (sekarang)` });
+  });
+  // future flood (scaled), revealed by swipe opacity
+  if (layers.fut100 && futOpacity > 0.02) baseZones.forEach((z, i) => {
+    const nums = (z.d.match(/-?\d+\.?\d*/g) || []).map(Number);
+    const pts = [];
+    for (let j = 0; j + 1 < nums.length; j += 2) { const [sx, sy] = scaleXY(nums[j], nums[j + 1], futureScale); pts.push(fmXY(sx, sy, c)); }
+    const dc = depthColors[Math.min(2, z.depth + 1)];
+    polygons.push({ coords: [pts], color: dc, fillColor: dc, fillOpacity: futOpacity, weight: 1, dash: "5 3",
+      tooltip: `Proyeksi genangan masa depan (×${factor.toFixed(1)})` });
+  });
+
+  const lines = [];
+  lines.push({ coords: fmPath("M120,80 200,160 240,200 280,265 320,330", c), color: "#5FA3C7", weight: 2.5, opacity: 0.75, tooltip: "Sungai utama" });
+  lines.push({ coords: fmPath("M240,200 300,180 380,150", c), color: "#5FA3C7", weight: 1.8, opacity: 0.6 });
+  if (layers.tanggul) lines.push({ coords: fmPath("M150,210 240,195 330,215", c), color: "#8B5F0E", weight: 3, dash: "6 3", tooltip: "Tanggul" });
+  if (layers.drainase) { lines.push({ coords: fmPath("M180,160 200,280", c), color: "#2A9D8F", weight: 1.5 }); lines.push({ coords: fmPath("M280,150 290,290", c), color: "#2A9D8F", weight: 1.5 }); }
+
+  const markers = [];
+  if (layers.asset) [[220,200],[270,230],[180,240],[310,210],[240,170]].forEach(([x, y]) => {
+    const [lng, lat] = fmXY(x, y, c);
+    markers.push({ lng, lat, html: `<div style="width:8px;height:8px;background:#8B1A1A;border:1px solid #fff;"></div>`, popup: "Aset terpapar" });
+  });
 
   return (
-    <svg viewBox="0 0 500 360" className="fm-svg" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <pattern id="fm-grid" width="22" height="22" patternUnits="userSpaceOnUse">
-          <path d="M 22 0 L 0 0 0 22" fill="none" stroke="var(--border-subtle)" strokeWidth="0.5" />
-        </pattern>
-        <clipPath id="fm-future-clip"><rect x={500 * (1 - revealFuture)} y="0" width={500 * revealFuture} height="360" /></clipPath>
-      </defs>
-      <rect width="500" height="360" fill="var(--surface-sunken, #E9EEEA)" />
-      <rect width="500" height="360" fill="url(#fm-grid)" />
-
-      {/* DAS outline */}
-      <path d="M90,60 L400,50 L420,180 L380,320 L240,340 L120,310 L80,180 Z"
-        fill="var(--surface, #fff)" stroke="var(--border-strong)" strokeWidth="1.5" fillOpacity="0.5" />
-      {/* river network */}
-      <path d="M120,80 Q200,160 240,200 T320,330" fill="none" stroke="#5FA3C7" strokeWidth="2.5" opacity="0.7" />
-      <path d="M240,200 Q300,180 380,150" fill="none" stroke="#5FA3C7" strokeWidth="1.8" opacity="0.6" />
-
-      {/* current flood (left of swipe) */}
-      {layers.cur100 && baseZones.map((z, i) => (
-        <path key={"c"+i} d={z.d} fill={depthColors[z.depth]} fillOpacity="0.62" stroke={depthColors[z.depth]} strokeWidth="0.5" />
-      ))}
-
-      {/* future flood (revealed by swipe, scaled larger) */}
-      {layers.fut100 && (
-        <g clipPath="url(#fm-future-clip)">
-          {baseZones.map((z, i) => (
-            <path key={"f"+i} d={z.d} fill={depthColors[Math.min(2, z.depth + 1)]} fillOpacity="0.72"
-              transform={`translate(250,180) scale(${futureScale}) translate(-250,-180)`} />
-          ))}
-        </g>
-      )}
-      {/* swipe line */}
-      {layers.fut100 && (
-        <line x1={500 * (1 - revealFuture)} y1="0" x2={500 * (1 - revealFuture)} y2="360" stroke="var(--text-primary)" strokeWidth="1.5" strokeDasharray="4 3" opacity="0.5" />
-      )}
-
-      {/* tanggul */}
-      {layers.tanggul && <path d="M150,210 Q240,195 330,215" fill="none" stroke="#8B5F0E" strokeWidth="3" strokeDasharray="6 3" />}
-      {/* drainase */}
-      {layers.drainase && <g opacity="0.6">
-        <line x1="180" y1="160" x2="200" y2="280" stroke="#2A9D8F" strokeWidth="1.5" />
-        <line x1="280" y1="150" x2="290" y2="290" stroke="#2A9D8F" strokeWidth="1.5" />
-      </g>}
-      {/* asset overlay */}
-      {layers.asset && <g>
-        {[[220,200],[270,230],[180,240],[310,210],[240,170]].map(([x,y],i) => (
-          <rect key={i} x={x} y={y} width="7" height="7" fill="#8B1A1A" stroke="#fff" strokeWidth="0.6" />
-        ))}
-      </g>}
-
-      <g transform="translate(250,200)" style={{ pointerEvents: "none" }}>
-        <circle r="4" fill="var(--text-primary)" />
-        <text y="20" textAnchor="middle" fontSize="11" fontWeight="600" fill="var(--text-primary)">{region.name}</text>
-      </g>
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap key={region.id} center={c} zoom={region.zoom || 9} basemap="positron" polygons={polygons} lines={lines} markers={markers} controls={true} />
+    </div>
   );
 }
 

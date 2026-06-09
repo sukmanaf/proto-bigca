@@ -151,26 +151,32 @@ function AdvancedClimate({ setRoute, ctx, openAI }) {
 function ACMMap({ variable, projDelta, ensemble }) {
   const isUncert = ensemble.startsWith("Uncertainty");
   const ramp = variable === "precip" ? ["#E0F2FE", "#60A5FA", "#1E4E6B"] : ["#FDF3DC", "#E9A352", "#C44E37", "#8B1A1A"];
-  const cells = [];
-  for (let r = 0; r < 7; r++) for (let c = 0; c < 11; c++) {
-    const seed = ((r * 11 + c) * 31) % 100 / 100;
+  const colorAt = (t) => ramp[Math.min(ramp.length - 1, Math.floor(t * ramp.length))];
+
+  // grid downscaling ~0.07° di atas Sulawesi Selatan
+  const center = [119.9, -4.3];
+  const cols = 11, rows = 7, step = 0.28;
+  const lng0 = center[0] - (cols / 2) * step, lat0 = center[1] + (rows / 2) * step;
+
+  const polygons = [];
+  for (let r = 0; r < rows; r++) for (let col = 0; col < cols; col++) {
+    const seed = ((r * cols + col) * 31) % 100 / 100;
     const intensity = Math.min(0.99, seed * 0.6 + projDelta / 4);
-    cells.push({ r, c, intensity });
+    const lng = lng0 + col * step, lat = lat0 - r * step;
+    const ring = [[lng, lat], [lng + step, lat], [lng + step, lat - step], [lng, lat - step]];
+    polygons.push({
+      coords: [ring], color: "#ffffff", weight: 0.4,
+      fillColor: isUncert ? "#9DACA4" : colorAt(intensity),
+      fillOpacity: isUncert ? intensity * 0.6 : 0.7,
+      tooltip: isUncert ? `Uncertainty: ±${(intensity * (variable === "precip" ? 40 : 1.6)).toFixed(1)}${variable === "precip" ? "%" : "°C"}`
+        : `${variable === "precip" ? "Δ presipitasi" : "Δ suhu"}: ${(intensity * (variable === "precip" ? 30 : 4) + projDelta).toFixed(1)}${variable === "precip" ? "%" : "°C"}`,
+    });
   }
-  const colorAt = (t) => {
-    const idx = Math.min(ramp.length - 1, Math.floor(t * ramp.length));
-    return ramp[idx];
-  };
+
   return (
-    <svg viewBox="0 0 506 300" className="rdtr-svg" preserveAspectRatio="none">
-      {cells.map((cell, i) => (
-        <rect key={i} x={cell.c * 46} y={cell.r * 43} width="46" height="43"
-          fill={isUncert ? "#9DACA4" : colorAt(cell.intensity)}
-          fillOpacity={isUncert ? cell.intensity * 0.6 : 0.82} stroke="#fff" strokeWidth="0.5" />
-      ))}
-      <circle cx="230" cy="150" r="6" fill="none" stroke="var(--text-primary)" strokeWidth="2" />
-      <circle cx="230" cy="150" r="2" fill="var(--text-primary)" />
-    </svg>
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <window.GeoMap center={center} zoom={6.4} basemap="positron" polygons={polygons} controls={true} />
+    </div>
   );
 }
 
