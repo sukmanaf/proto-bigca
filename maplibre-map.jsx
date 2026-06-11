@@ -51,7 +51,7 @@ function GeoMap({
         dragging: interactive, scrollWheelZoom: interactive,
         doubleClickZoom: interactive, boxZoom: interactive,
         keyboard: interactive, touchZoom: interactive,
-        fadeAnimation: false, preferCanvas: false,
+        fadeAnimation: false, preferCanvas: true,
       });
       mapRef.current = map;
       const bm = LEAF_BASEMAPS[basemap] || LEAF_BASEMAPS.positron;

@@ -110,7 +110,7 @@ function TabPeta({ climate, committed, REGIONS }) {
     }
     const pts = getStations("t2m", month, provGrid);
     if (!pts.length) return;
-    setEra4Loading(true); setEra4Error(null); setEra4Stations(null);
+    setEra4Loading(true); setEra4Error(null);
     Promise.all(
       pts.map(st =>
         fetch(`${cfg.ML_API_URL}/v1/predict/era5`, {
