@@ -98,6 +98,16 @@
     "count": 9,
     "children": [
       {
+        "code": "2.0",
+        "name": "Iklim Wilayah",
+        "name_en": "Regional Climate Insight",
+        "emoji": "cloud-sun",
+        "route": "feature-iklim",
+        "tagline": "Lihat, prediksi, dan publikasikan iklim wilayah",
+        "tabs": ["Ikhtisar","Prediksi","Peta & Layer","Publikasi & Integrasi"],
+        "desc": "Entry point iklim ringan: ikhtisar historis, prediksi ML (UC-1/UC-2), layer spasial, publikasi OGC"
+      },
+      {
         "code": "2.1",
         "name": "Advanced Climate Modeling",
         "desc": "Ensemble CMIP6 downscaling untuk skala kab/kota, multi-scenario"

@@ -5230,6 +5230,8 @@ html[data-density="compact"] .dashboard { gap: 16px; padding: 16px 20px 24px; }
 .region-prompt strong { display: block; font-size: 14px; margin-bottom: 3px; }
 .region-prompt div > div { font-size: 12.5px; color: var(--gray-600); }
 .iklim-empty, .iklim-soon { display: flex; flex-direction: column; align-items: center; gap: 10px; text-align: center; padding: 60px 24px; color: var(--gray-500); }
+.iklim-loading { display: flex; align-items: center; gap: 10px; padding: 60px 24px; justify-content: center; color: var(--gray-500); font-size: 14px; }
+.iklim-error { display: flex; align-items: center; gap: 8px; padding: 20px 24px; color: #7A2D00; background: #FFF0EB; border-radius: var(--radius-md); margin: 16px 24px; font-size: 13px; }
 .iklim-empty :first-child, .iklim-soon-icon { color: var(--gray-300); }
 .iklim-empty h3, .iklim-soon h3 { font-size: 17px; color: var(--gray-800); margin: 4px 0 0; }
 .iklim-empty p, .iklim-soon p { font-size: 13px; max-width: 420px; margin: 0; }
@@ -5318,6 +5320,23 @@ html[data-density="compact"] .dashboard { gap: 16px; padding: 16px 20px 24px; }
 .pred-result-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .ghost-btn.sm { font-size: 12px; padding: 6px 10px; }
 .pred-disclaimer { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--warning-800, #7A540E); background: var(--warning-50, #FBF3E0); border: 1px solid var(--warning-200, #F0DCAE); border-radius: var(--radius-md); padding: 9px 14px; }
+.pred-api-warn { display: flex; align-items: center; gap: 6px; margin: 0 16px 8px; padding: 7px 12px; font-size: 11.5px; color: #7A2D00; background: #FFF0EB; border: 1px solid #FFCBB5; border-radius: var(--radius-md); }
+/* UC-3 anomaly result */
+.pred-anomaly { padding: 8px 0 4px; }
+.pred-anomaly-badge { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-radius: var(--radius-md); font-size: 15px; font-weight: 700; margin-bottom: 10px; }
+.pred-anomaly-badge.ok { background: #EDFAF4; color: #1B7A4A; border: 1px solid #A3E3C1; }
+.pred-anomaly-badge.bad { background: #FFF3CD; color: #92480A; border: 1px solid #FFCC80; }
+.pred-anomaly-meta { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--gray-600); padding: 0 2px; }
+.pred-anomaly-meta span b { color: var(--gray-900); }
+/* ERA5 ML badge */
+.peta-era4-tag { font-size: 10.5px; font-weight: 600; color: #0E5A78; background: #E8F4FB; border-radius: 4px; padding: 1px 5px; margin-left: 4px; }
+.peta-era4-tag.loading { color: #888; background: #f3f3f3; }
+/* Live/Mock badge Tab Ikhtisar */
+.ovw-live-badge { font-size: 10px; font-weight: 700; color: #fff; background: #1B7A4A; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.ovw-mock-badge { font-size: 10px; font-weight: 600; color: #888; background: #f0f0f0; border-radius: 4px; padding: 1px 6px; margin-left: 6px; vertical-align: middle; }
+.ovw-live-state { display: flex; align-items: center; gap: 7px; padding: 14px 16px; font-size: 13px; color: var(--gray-500); }
+.ovw-live-state.error { color: #7A2D00; background: #FFF0EB; border-radius: var(--radius-md); margin: 8px 0; }
+.peta-era4-tag.error { color: #7A2D00; background: #FFF0EB; }
 .pred-disclaimer :first-child { color: var(--warning-600, #C18820); flex-shrink: 0; }
 
 @media (max-width: 1100px) { .ovw-two, .pred-two { grid-template-columns: 1fr; } .ovw-map { min-height: 260px; } }
@@ -7291,6 +7310,7 @@ html[data-density="compact"] .dashboard { gap: 16px; padding: 16px 20px 24px; }
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
 <!-- App scripts (order matters) -->
+<script src="env.js"></script>
 <script type="text/babel" src="data.jsx"></script>
 <script type="text/babel" src="maplibre-map.jsx"></script>
 <script type="text/babel" src="risk-map-real.jsx"></script>

@@ -37,32 +37,11 @@ function lerpColor(a, b, t) {
 }
 
 // ---- kumpulkan titik stasiun untuk surface ----
-function getStations(prov, param, month) {
-  const REGIONS = window.CLIMATE_REGIONS, DATA = window.CLIMATE_DATA;
-  const provObj = REGIONS[prov];
-  // DIY: pakai 8 titik kecamatan (RDTR) untuk surface kaya
-  if (prov === "diy" && window.YOGYA_KEC_STATS) {
-    const series = DATA.yogyakarta.series;
-    const meanT = series.reduce((a, s) => a + s.t2m, 0) / 12;
-    const meanP = series.reduce((a, s) => a + s.precip, 0) / 12;
-    const mT = series[month].t2m - meanT;
-    const mP = series[month].precip / (meanP || 1);
-    return window.YOGYA_KEC_STATS.map(k => {
-      const kc = provObj.kab.yogyakarta.kec.find(c => c.code === k.code);
-      let val;
-      if (param === "t2m") val = +(k.t2m + mT).toFixed(1);
-      else if (param === "precip") val = Math.round(k.rain * mP);
-      else val = series[month][param];
-      return { name: k.name, lng: kc.lng, lat: kc.lat, val };
-    });
-  }
-  // generik: semua kota/kab dengan data
-  const sts = [];
-  Object.keys(provObj.kab).forEach(kk => {
-    const o = provObj.kab[kk];
-    if (o.data && DATA[kk]) sts.push({ name: o.name, lng: o.lng, lat: o.lat, val: DATA[kk].series[month][param] });
-  });
-  return sts;
+function getStations(param, month, provGrid) {
+  if (!provGrid || !provGrid.length) return [];
+  return provGrid
+    .filter(pt => pt.series && pt.series[month])
+    .map(pt => ({ name: pt.label, lng: pt.lon, lat: pt.lat, val: pt.series[month][param] ?? 0 }));
 }
 
 function idw(lng, lat, stations, power) {
@@ -83,7 +62,13 @@ function TabPeta({ climate, committed, REGIONS }) {
   const [month, setMonth] = React.useState(5);
   const [playing, setPlaying] = React.useState(false);
   const [method, setMethod] = React.useState("idw"); // idw | kriging(mock)
-  const [layers, setLayers] = React.useState({ surface: true, stations: true, zona: committed.prov === "diy", kontur: false });
+  const [layers, setLayers] = React.useState({ surface: true, stations: true, zona: !!kabObj.kecLevel, kontur: false });
+  const [era4Stations, setEra4Stations] = React.useState(null); // UC-4: ERA5 predictions per titik
+  const [era4Loading, setEra4Loading] = React.useState(false);
+  const [era4Error, setEra4Error] = React.useState(null);
+  const [provGrid, setProvGrid] = React.useState(null);     // titik NASA POWER provinsi ini
+  const [riskZones, setRiskZones] = React.useState(null);   // UC-5 risk zones per kecamatan
+  const [riskLoading, setRiskLoading] = React.useState(false);
   const playRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -93,7 +78,57 @@ function TabPeta({ climate, committed, REGIONS }) {
     return () => clearInterval(playRef.current);
   }, [playing]);
 
-  const stations = React.useMemo(() => getStations(committed.prov, param, month), [committed.prov, committed.kab, param, month]);
+  // Fetch semua titik NASA POWER untuk provinsi ini
+  React.useEffect(() => {
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    setProvGrid(null);
+    fetch(`${cfg.ML_API_URL}/v1/climate/stations/${committed.prov}`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => setProvGrid(d))
+      .catch(() => setProvGrid(null));
+  }, [committed.prov]);
+
+  // DIY: fetch UC-5 risk zones dari API
+  React.useEffect(() => {
+    if (!kabObj.kecLevel) { setRiskZones(null); return; }
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    setRiskLoading(true);
+    fetch(`${cfg.ML_API_URL}/v1/risk/zones`)
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { setRiskZones(d); setRiskLoading(false); })
+      .catch(() => { setRiskZones(null); setRiskLoading(false); });
+  }, [committed.prov]);
+
+  // UC-4: fetch ERA5 predicted t2m per station point
+  React.useEffect(() => {
+    if (param !== "t2m") { setEra4Stations(null); setEra4Error(null); return; }
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) {
+      setEra4Error("ML API dinonaktifkan"); setEra4Loading(false); return;
+    }
+    const pts = getStations("t2m", month, provGrid);
+    if (!pts.length) return;
+    setEra4Loading(true); setEra4Error(null); setEra4Stations(null);
+    Promise.all(
+      pts.map(st =>
+        fetch(`${cfg.ML_API_URL}/v1/predict/era5`, {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ lat: st.lat, lon: st.lng, month: month + 1 }),
+        })
+        .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
+        .then(d => ({ ...st, val: d.predicted_t2m_celsius }))
+      )
+    )
+    .then(results => { setEra4Stations(results); setEra4Loading(false); })
+    .catch(e => { setEra4Error(`ERA5 gagal: ${e}`); setEra4Loading(false); });
+  }, [committed.prov, committed.kab, month, param]);
+
+  const stations = React.useMemo(() => {
+    if (param === "t2m") return era4Stations || [];
+    return getStations(param, month, provGrid);
+  }, [era4Stations, provGrid, committed.prov, committed.kab, param, month]);
 
   // bounding box surface
   const bbox = React.useMemo(() => {
@@ -138,17 +173,30 @@ function TabPeta({ climate, committed, REGIONS }) {
     }));
   }, [layers.stations, stations, param]);
 
-  // zona kecamatan (titik label, hanya DIY)
+  // zona kecamatan + UC-5 risk choropleth (hanya DIY)
+  const RISK_COLOR = { "Rendah": "#2A9D8F", "Sedang": "#E9C46A", "Tinggi": "#C44E37" };
   const zonaAreas = React.useMemo(() => {
-    if (!layers.zona || committed.prov !== "diy") return [];
-    return provObj.kab.yogyakarta.kec.map(kc => ({
+    if (!layers.zona || !kabObj.kecLevel) return [];
+    // Jika risk zones sudah loaded → gambar sebagai lingkaran warna risk level
+    if (riskZones && riskZones.length) {
+      return riskZones.map(z => ({
+        lng: z.centroid_lon, lat: z.centroid_lat,
+        radiusM: 700,
+        color: RISK_COLOR[z.risk_level] || "#9DACA4",
+        fillColor: RISK_COLOR[z.risk_level] || "#9DACA4",
+        fillOpacity: 0.45, weight: 1.5,
+        tooltip: `${z.kecamatan}: ${z.risk_level} · skor ${z.risk_score} · ${z.luas_ha.toFixed(0)} ha`,
+      }));
+    }
+    // Fallback: outline saja sebelum data loaded
+    return (kabObj.kec || []).map(kc => ({
       lng: kc.lng, lat: kc.lat, radiusM: 900, color: "#1F2E29", fillOpacity: 0, weight: 1.4, dash: "3 3",
       tooltip: `Kec. ${kc.name}`,
     }));
-  }, [layers.zona, committed.prov]);
+  }, [layers.zona, committed.kab, riskZones]);
 
   const center = [kabObj.lng, kabObj.lat];
-  const zoom = committed.prov === "diy" ? 11.5 : 7;
+  const zoom = kabObj.kecLevel ? 11.5 : 7;
 
   // zonal statistics
   const zonal = React.useMemo(() => {
@@ -178,7 +226,10 @@ function TabPeta({ climate, committed, REGIONS }) {
             <button className={method === "idw" ? "on" : ""} onClick={() => setMethod("idw")}>IDW</button>
             <button className={method === "kriging" ? "on" : ""} onClick={() => setMethod("kriging")}>Kriging</button>
           </div>
-          <div className="peta-hint">{stations.length} {tr("titik stasiun")} · power {power.toFixed(1)}</div>
+          <div className="peta-hint">
+            {stations.length} {tr("titik stasiun")} · power {power.toFixed(1)}
+            {param === "t2m" && (era4Loading ? <span className="peta-era4-tag loading"> · ERA5 loading…</span> : era4Error ? <span className="peta-era4-tag error"> · {era4Error}</span> : era4Stations ? <span className="peta-era4-tag"> · ERA5 ML</span> : null)}
+          </div>
         </div>
         <div className="rdtr-panel">
           <div className="rdtr-panel-head">{tr("Layer")}</div>
@@ -186,7 +237,7 @@ function TabPeta({ climate, committed, REGIONS }) {
             {[
               ["surface", tr("Permukaan interpolasi")],
               ["stations", tr("Titik stasiun")],
-              ["zona", tr("Batas kecamatan"), committed.prov !== "diy"],
+              ["zona", tr("Batas kecamatan"), !kabObj.kecLevel],
               ["kontur", tr("Kontur (iso)"), true],
             ].map(([k, lbl, disabled]) => (
               <label key={k} className={`fm-check ${disabled ? "is-disabled" : ""}`}>
@@ -242,6 +293,40 @@ function TabPeta({ climate, committed, REGIONS }) {
             <div><span>rentang</span><b>{param === "precip" ? Math.round(vmax - vmin) : (vmax - vmin).toFixed(1)}</b></div>
           </div>
         </div>
+        {/* UC-5 Risk Zones (hanya DIY) */}
+        {kabObj.kecLevel && (
+          <div className="rdtr-panel">
+            <div className="rdtr-panel-head">
+              <Icon name="shield-alert" size={13} /> {tr("UC-5 Climate Risk")}
+              {riskLoading && <span className="peta-era4-tag loading"> · loading…</span>}
+              {riskZones && <span className="peta-era4-tag"> · Formula DB</span>}
+            </div>
+            {riskZones ? (
+              <>
+                <div className="peta-stats-sub">{tr("Risk score per kecamatan")} · {kabObj.name}</div>
+                <div className="peta-zonal">
+                  {riskZones.map(z => (
+                    <div key={z.kecamatan} className="peta-zrow">
+                      <span className="peta-zname" style={{ fontSize: "10px" }}>{z.kecamatan}</span>
+                      <div className="peta-zbar">
+                        <div style={{ width: `${Math.max(8, z.risk_score * 100)}%`, background: RISK_COLOR[z.risk_level] || "#9DACA4" }} />
+                      </div>
+                      <span className="peta-zval" style={{ color: RISK_COLOR[z.risk_level] }}>{z.risk_level}</span>
+                    </div>
+                  ))}
+                </div>
+                {riskZones.every(z => z.risk_score === 0) && (
+                  <div className="peta-export-note" style={{ marginTop: 6 }}>
+                    <Icon name="info" size={11} />
+                    <span style={{ fontSize: "10px" }}>{tr("Skor masih homogen — data iklim NASA POWER per kecamatan belum memiliki variasi spasial.")}</span>
+                  </div>
+                )}
+              </>
+            ) : !riskLoading ? (
+              <div className="peta-export-note"><Icon name="wifi-off" size={11} /><span>{tr("Gagal memuat risk zones.")}</span></div>
+            ) : null}
+          </div>
+        )}
         <div className="peta-export-note">
           <Icon name="info" size={12} />
           <span>{tr("Permukaan ini bisa dipublikasikan sebagai layer di Tab Publikasi & Integrasi.")}</span>

@@ -18,6 +18,7 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
   const [month, setMonth] = React.useState(6); // index bulan (0-11) → Jul=6
   const [result, setResult] = React.useState(null);
   const [running, setRunning] = React.useState(false);
+  const [apiError, setApiError] = React.useState(null); // pesan error API (null = ok)
 
   // fitur auto-isi dari DB (series bulan terpilih + current)
   const base = climate.series[month];
@@ -26,21 +27,105 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
   React.useEffect(() => {
     const b = climate.series[month];
     setFeat({
-      rh: b.rh, wind: b.wind, rad: b.rad, cloud: climate.current.cloud,
+      rh: b.rh, wind: b.wind, rad: b.rad, cloud: climate.current?.cloud ?? 50,
       lat: kabObj.lat, lon: kabObj.lng,
     });
     setResult(null);
+    setApiError(null);
   }, [month, committed.kab]);
 
   function setF(k, v) { setFeat(f => ({ ...f, [k]: v })); }
 
-  function runPredict() {
+  async function runPredict() {
     setRunning(true);
     setResult(null);
-    setTimeout(() => {
-      setResult(predict(task, month, feat, climate));
-      setRunning(false);
-    }, 700);
+    setApiError(null);
+
+    const cfg = window.APP_CONFIG || {};
+    if (cfg.ML_API_ENABLED && cfg.ML_API_URL) {
+      try {
+        if (!cfg.ML_API_URL) throw new Error("ML_API_URL tidak dikonfigurasi di env.js");
+        const b = climate.series[month];
+        let res;
+        if (task === "uc1") {
+          // UC-1: klasifikasi cuaca — POST /v1/predict/weather
+          const body = {
+            suhu_c: b.t2m,
+            kelembaban_pct: feat.rh,
+            kecepatan_angin_kmh: +(feat.wind * 3.6).toFixed(1), // m/s → km/h
+            arah_angin_deg: 180,
+            tutupan_awan_pct: feat.cloud,
+            lat: feat.lat,
+            lon: feat.lon,
+            datetime_local: new Date().toISOString().replace("T", " ").slice(0, 19),
+          };
+          const r = await fetch(`${cfg.ML_API_URL}/v1/predict/weather`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const data = await r.json();
+          res = {
+            kind: "class", value: data.predicted, prob: data.proba,
+            modelVer: data.model_version,
+            shap: data.shap && data.shap.length > 0 ? data.shap : null,
+          };
+        } else if (task === "uc2") {
+          // UC-2: prediksi suhu bulanan — POST /v1/predict/climate
+          const body = {
+            lat: feat.lat, lon: feat.lon,
+            month: month + 1, // frontend 0-11 → API 1-12
+            rh2m: feat.rh,
+            ws2m: feat.wind,
+            allsky_sfc_sw_dwn: feat.rad,
+          };
+          const r = await fetch(`${cfg.ML_API_URL}/v1/predict/climate`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const data = await r.json();
+          const val = +data.predicted.toFixed(2);
+          res = {
+            kind: "value", value: val, unit: "°C",
+            ci: (data.ci_low !== null && data.ci_high !== null)
+              ? [data.ci_low, data.ci_high] : null,
+            modelVer: data.model_version,
+            shap: data.shap && data.shap.length > 0 ? data.shap : null,
+          };
+        } else if (task === "uc3") {
+          // UC-3: deteksi anomali — POST /v1/anomaly/check
+          const b = climate.series[month];
+          const body = {
+            suhu_c: b.t2m,
+            kelembaban_pct: feat.rh,
+            curah_hujan_mm: b.precip,
+            kecepatan_angin_kmh: +(feat.wind * 3.6).toFixed(1),
+          };
+          const r = await fetch(`${cfg.ML_API_URL}/v1/anomaly/check`, {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          if (!r.ok) throw new Error(`HTTP ${r.status}`);
+          const data = await r.json();
+          res = {
+            kind: "anomaly",
+            is_anomaly: data.is_anomaly,
+            reason: data.reason,
+            anomaly_score: data.anomaly_score,
+            method: data.method,
+            modelVer: "UC3-IsoForest@dev",
+            shap: null,
+          };
+        }
+        setResult(res);
+      } catch (err) {
+        setApiError(`Gagal menghubungi ML API: ${err.message}`);
+      }
+    } else {
+      setApiError("ML API dinonaktifkan (ML_API_ENABLED: false di env.js)");
+    }
+    setRunning(false);
   }
 
   const taskObj = TASKS.find(t => t.id === task);
@@ -88,6 +173,11 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
             <button className="pred-run" onClick={runPredict} disabled={running}>
               {running ? <><span className="pred-spin" /> {tr("Memproses…")}</> : <><Icon name="play" size={15} /> {tr("PREDIKSI")}</>}
             </button>
+            {apiError && (
+              <div className="pred-api-warn">
+                <Icon name="wifi-off" size={12} /> {apiError}
+              </div>
+            )}
           </div>
 
           {/* HASIL */}
@@ -116,35 +206,78 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
   const [running, setRunning] = React.useState(false);
   const [grid, setGrid] = React.useState(null);
   const [progress, setProgress] = React.useState(0);
+  const [gridError, setGridError] = React.useState(null);
+
+  React.useEffect(() => { setGrid(null); setGridError(null); }, [task]);
 
   const isClass = task === "uc1";
-  const unit = task === "uc1" ? "" : task === "uc3" ? "mm" : "°C";
+  const unit = task === "uc1" ? "" : "°C";
   const center = [kabObj.lng, kabObj.lat];
   const span = committed.prov === "diy" ? 0.10 : 0.55;
 
-  function runGrid() {
-    setRunning(true); setGrid(null); setProgress(0);
+  async function runGrid() {
+    if (task === "uc3") return; // anomali tidak mendukung mode grid
+    const cfg = window.APP_CONFIG || {};
+    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) {
+      setGridError("ML API dinonaktifkan");
+      return;
+    }
+    setRunning(true); setGrid(null); setProgress(0); setGridError(null);
     const cols = 14, rows = 14;
-    const t = setInterval(() => setProgress(p => Math.min(100, p + 12)), 90);
-    setTimeout(() => {
-      clearInterval(t);
+    const b = climate.series[month];
+
+    // Build 196-item batch request
+    const items = [];
+    const cellMeta = [];
+    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+      const lng = center[0] - span / 2 + (c + 0.5) / cols * span;
+      const lat = center[1] - span / 2 + (r + 0.5) / rows * span;
+      cellMeta.push({ lng, lat, c, r, dx: span / cols, dy: span / rows });
+      if (task === "uc1") {
+        items.push({
+          suhu_c: b.t2m, kelembaban_pct: b.rh,
+          kecepatan_angin_kmh: +(b.wind * 3.6).toFixed(1),
+          arah_angin_deg: 180, tutupan_awan_pct: 50,
+          lat, lon: lng,
+          datetime_local: new Date().toISOString().replace("T", " ").slice(0, 19),
+        });
+      } else {
+        items.push({
+          lat, lon: lng, month: month + 1,
+          rh2m: b.rh, ws2m: b.wind, allsky_sfc_sw_dwn: b.rad,
+        });
+      }
+    }
+
+    try {
+      const endpoint = task === "uc1"
+        ? "/v1/predict/batch/weather"
+        : "/v1/predict/batch/climate";
+      setProgress(30);
+      const r = await fetch(`${cfg.ML_API_URL}${endpoint}`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      setProgress(80);
+
       const cells = [];
       let vmin = Infinity, vmax = -Infinity, cls = {};
-      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-        const lng = center[0] - span / 2 + (c + 0.5) / cols * span;
-        const lat = center[1] - span / 2 + (r + 0.5) / rows * span;
-        // prediksi per-sel: model dasar + variasi spasial deterministik
-        const feat = { rh: climate.series[month].rh, wind: climate.series[month].wind, rad: climate.series[month].rad, cloud: climate.current.cloud, lat, lon: lng };
-        const res = predict(task, month, feat, climate);
-        const spatial = (Math.sin(lng * 9) * Math.cos(lat * 11)) * (isClass ? 0 : (task === "uc3" ? 28 : 0.9));
-        let v = isClass ? res.value : +(res.value + spatial).toFixed(task === "uc3" ? 0 : 1);
-        cells.push({ lng, lat, v, prob: res.prob, c, r, dx: span / cols, dy: span / rows });
+      data.results.forEach((res, idx) => {
+        if (!res) return;
+        const m = cellMeta[idx];
+        const v = task === "uc1" ? res.predicted : res.predicted;
+        cells.push({ lng: m.lng, lat: m.lat, v, prob: res.proba || null, c: m.c, r: m.r, dx: m.dx, dy: m.dy });
         if (!isClass) { vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); }
         else cls[v] = (cls[v] || 0) + 1;
-      }
+      });
       setGrid({ cells, vmin, vmax, cls, n: cells.length });
-      setRunning(false);
-    }, 850);
+      setProgress(100);
+    } catch (err) {
+      setGridError(`Gagal batch predict: ${err.message}`);
+    }
+    setRunning(false);
   }
 
   // ramp untuk hasil
@@ -162,7 +295,7 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
 
   const polygons = grid ? grid.cells.map(cell => ({
     coords: [[[cell.lng - cell.dx / 2, cell.lat - cell.dy / 2], [cell.lng + cell.dx / 2, cell.lat - cell.dy / 2], [cell.lng + cell.dx / 2, cell.lat + cell.dy / 2], [cell.lng - cell.dx / 2, cell.lat + cell.dy / 2]]],
-    color: rampFor(cell.v), fillColor: rampFor(cell.v), fillOpacity: 0.6, weight: 0,
+    color: "rgba(255,255,255,0.5)", fillColor: rampFor(cell.v), fillOpacity: 0.65, weight: 0.5,
     tooltip: `${isClass ? cell.v : cell.v + unit}`,
   })) : [];
 
@@ -182,11 +315,17 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
       </div>
 
       <div className="pred-area-stage">
-        {!grid && !running && (
+        {task === "uc3" && (
+          <div className="pred-area-empty"><Icon name="alert-circle" size={28} /><span>{tr("Mode grid tidak tersedia untuk UC-3 (Deteksi Anomali). Gunakan Mode Titik.")}</span></div>
+        )}
+        {task !== "uc3" && !grid && !running && !gridError && (
           <div className="pred-area-empty"><Icon name="grid-3x3" size={30} /><span>{tr("Klik \u201cJalankan Grid\u201d untuk memprediksi seluruh wilayah")}</span></div>
         )}
+        {gridError && (
+          <div className="pred-area-empty"><Icon name="wifi-off" size={28} /><span className="pred-api-warn">{gridError}</span></div>
+        )}
         {running && (
-          <div className="pred-area-empty"><span className="pred-spin big" /><span>{tr("Memprediksi")} 196 {tr("sel")} · {taskObj.model}…</span></div>
+          <div className="pred-area-empty"><span className="pred-spin big" /><span>{tr("Memprediksi")} 196 {tr("sel")} · {taskObj.model}… {progress}%</span></div>
         )}
         {grid && (
           <window.GeoMap key={committed.kab} center={center} zoom={committed.prov === "diy" ? 11.5 : 9} basemap="positron" polygons={polygons} controls={true} />
@@ -203,9 +342,9 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
               </>
             ) : (
               <>
-                <span className="pred-area-stat">min <b>{grid.vmin.toFixed(task === "uc3" ? 0 : 1)}{unit}</b></span>
-                <span className="pred-area-stat">maks <b>{grid.vmax.toFixed(task === "uc3" ? 0 : 1)}{unit}</b></span>
-                <span className="pred-area-stat">rerata <b>{(grid.cells.reduce((a, c) => a + c.v, 0) / grid.n).toFixed(task === "uc3" ? 0 : 1)}{unit}</b></span>
+                <span className="pred-area-stat">min <b>{grid.vmin.toFixed(1)}{unit}</b></span>
+                <span className="pred-area-stat">maks <b>{grid.vmax.toFixed(1)}{unit}</b></span>
+                <span className="pred-area-stat">rerata <b>{(grid.cells.reduce((a, c) => a + c.v, 0) / grid.n).toFixed(1)}{unit}</b></span>
               </>
             )}
           </div>
@@ -233,29 +372,49 @@ function PField({ label, children }) {
 function ResultCard({ result, taskObj, month, setTab }) {
   return (
     <div className="pred-result-inner">
-      <div className={`pred-big ${result.kind}`}>
-        {result.kind === "class" ? (
-          <>
-            <div className="pred-big-class"><WeatherGlyph2 cond={result.value} /> {result.value}</div>
-            <div className="pred-big-prob">{tr("probabilitas")} {(result.prob * 100).toFixed(0)}%</div>
-          </>
-        ) : (
-          <>
-            <div className="pred-big-val">{result.value}<span>{result.unit}</span></div>
-            <div className="pred-big-ci">CI 90%: {result.ci[0]} – {result.ci[1]} {result.unit}</div>
-          </>
-        )}
-      </div>
-      <div className="pred-xai">
-        <div className="pred-xai-label"><Icon name="git-branch" size={12} /> XAI (SHAP) · {tr("kontribusi fitur")}</div>
-        {result.shap.map(s => (
-          <div key={s.f} className="pred-shap">
-            <span className="pred-shap-f">{s.f}</span>
-            <div className="pred-shap-bar"><div style={{ width: (s.w * 100) + "%" }} /></div>
-            <span className="pred-shap-w">{(s.w * 100).toFixed(0)}%</span>
+      {result.kind === "anomaly" ? (
+        <div className="pred-anomaly">
+          <div className={`pred-anomaly-badge ${result.is_anomaly ? "bad" : "ok"}`}>
+            <Icon name={result.is_anomaly ? "alert-triangle" : "check-circle"} size={22} />
+            {result.is_anomaly ? tr("Anomali Terdeteksi") : tr("Data Normal")}
           </div>
-        ))}
-      </div>
+          <div className="pred-anomaly-meta">
+            <span>{tr("Skor anomali")}: <b>{result.anomaly_score.toFixed(4)}</b></span>
+            <span>{tr("Metode")}: <b>{result.method}</b></span>
+            {result.reason && result.reason !== "OK" && (
+              <span>{tr("Keterangan")}: <b>{result.reason}</b></span>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className={`pred-big ${result.kind}`}>
+          {result.kind === "class" ? (
+            <>
+              <div className="pred-big-class"><WeatherGlyph2 cond={result.value} /> {result.value}</div>
+              <div className="pred-big-prob">{tr("probabilitas")} {(result.prob * 100).toFixed(0)}%</div>
+            </>
+          ) : (
+            <>
+              <div className="pred-big-val">{result.value}<span>{result.unit}</span></div>
+              {result.ci && (
+                <div className="pred-big-ci">CI 90%: {result.ci[0]} – {result.ci[1]} {result.unit}</div>
+              )}
+            </>
+          )}
+        </div>
+      )}
+      {result.shap && (
+        <div className="pred-xai">
+          <div className="pred-xai-label"><Icon name="git-branch" size={12} /> XAI (SHAP) · {tr("kontribusi fitur")}</div>
+          {result.shap.map(s => (
+            <div key={s.f} className="pred-shap">
+              <span className="pred-shap-f">{s.f}</span>
+              <div className="pred-shap-bar"><div style={{ width: (s.w * 100) + "%" }} /></div>
+              <span className="pred-shap-w">{(s.w * 100).toFixed(0)}%</span>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="pred-meta">{tr("Model")}: <code>{result.modelVer}</code> · {tr("Bulan")}: {MONTHS[month]}</div>
       <div className="pred-result-actions">
         <button className="ghost-btn sm"><Icon name="save" size={13} /> {tr("Simpan hasil")}</button>
@@ -273,55 +432,6 @@ function WeatherGlyph2({ cond }) {
   else if (c.includes("cerah")) icon = "cloud-sun";
   else if (c.includes("hujan")) icon = "cloud-rain";
   return <Icon name={icon} size={22} />;
-}
-
-// ---- Mesin prediksi mock (deterministik dari input) ----
-function predict(task, month, feat, climate) {
-  const b = climate.series[month];
-  if (task === "uc1") {
-    // Klasifikasi kondisi dari awan + hujan + RH
-    let label, prob;
-    const cloud = feat.cloud, rh = feat.rh, rain = b.precip;
-    if (rain > 300 || (cloud > 80 && rh > 85)) { label = "Hujan"; prob = 0.74 + Math.min(0.2, rain / 2000); }
-    else if (cloud > 60) { label = "Berawan"; prob = 0.68 + (cloud - 60) / 200; }
-    else if (cloud > 30) { label = "Cerah Berawan"; prob = 0.7; }
-    else { label = "Cerah"; prob = 0.8; }
-    prob = Math.min(0.97, prob);
-    return {
-      kind: "class", value: label, prob, modelVer: "wx-rf@1.2",
-      shap: [
-        { f: "Tutupan awan", w: 0.42 },
-        { f: "Kelembaban (RH)", w: 0.27 },
-        { f: "Curah hujan klim.", w: 0.19 },
-        { f: "Bulan", w: 0.12 },
-      ],
-    };
-  }
-  if (task === "uc3") {
-    // Prediksi hujan bulanan
-    const val = Math.round(b.precip * (0.95 + (feat.rh - b.rh) / 400));
-    return {
-      kind: "value", value: val, unit: "mm", ci: [Math.round(val * 0.78), Math.round(val * 1.22)], modelVer: "rain-lgbm@1.1",
-      shap: [
-        { f: "Bulan (musim)", w: 0.45 },
-        { f: "Kelembaban (RH)", w: 0.24 },
-        { f: "Koordinat", w: 0.18 },
-        { f: "ENSO/IOD", w: 0.13 },
-      ],
-    };
-  }
-  // UC-2 suhu bulanan (default)
-  const adj = (feat.rad - b.rad) * 0.05 - (feat.rh - b.rh) * 0.01 - (feat.cloud - climate.current.cloud) * 0.004;
-  const val = +(b.t2m + adj).toFixed(2);
-  return {
-    kind: "value", value: val, unit: "°C", ci: [+(val - 0.85).toFixed(1), +(val + 0.85).toFixed(1)], modelVer: "t2m-lgbm@1.3",
-    shap: [
-      { f: "Radiasi surya", w: 0.41 },
-      { f: "Bulan", w: 0.22 },
-      { f: "Koordinat (lat/lon)", w: 0.20 },
-      { f: "Kelembaban (RH)", w: 0.17 },
-    ],
-  };
 }
 
 Object.assign(window, { TabPrediksi });
