@@ -53,7 +53,7 @@ function IklimWilayah({ ctx, setRoute, openAI }) {
     const locationLabel = kabData.locationLabel;
     if (!locationLabel) return;
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     fetch(`${cfg.ML_API_URL}/v1/climate/years/${encodeURIComponent(locationLabel)}`)
       .then(r => r.ok ? r.json() : null)
       .then(d => {
@@ -73,7 +73,7 @@ function IklimWilayah({ ctx, setRoute, openAI }) {
 
     if (!locationLabel) { setClimateError("no-nasa-power"); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) { setClimateError("ML API dinonaktifkan"); return; }
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) { setClimateError("ML API dinonaktifkan"); return; }
 
     if (firstLoadRef.current) {
       setClimateLoading(true);

@@ -19,7 +19,7 @@ function ClimateSnapshot({ ctx, setRoute }) {
   React.useEffect(() => {
     if (!provObj) { setLoading(false); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) { setLoading(false); setError(true); return; }
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) { setLoading(false); setError(true); return; }
 
     // cari kab pertama dengan data + locationLabel di provinsi
     const kabEntry = Object.entries(provObj.kab).find(([, o]) => o.data && o.locationLabel);

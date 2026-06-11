@@ -42,9 +42,9 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
     setApiError(null);
 
     const cfg = window.APP_CONFIG || {};
-    if (cfg.ML_API_ENABLED && cfg.ML_API_URL) {
+    if (cfg.ML_API_ENABLED && cfg.ML_API_URL != null) {
       try {
-        if (!cfg.ML_API_URL) throw new Error("ML_API_URL tidak dikonfigurasi di env.js");
+        if (cfg.ML_API_URL == null) throw new Error("ML_API_URL tidak dikonfigurasi di env.js");
         const b = climate.series[month];
         let res;
         if (task === "uc1") {
@@ -218,7 +218,7 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
   async function runGrid() {
     if (task === "uc3") return; // anomali tidak mendukung mode grid
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) {
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) {
       setGridError("ML API dinonaktifkan");
       return;
     }

@@ -81,7 +81,7 @@ function TabPeta({ climate, committed, REGIONS }) {
   // Fetch semua titik NASA POWER untuk provinsi ini
   React.useEffect(() => {
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     setProvGrid(null);
     fetch(`${cfg.ML_API_URL}/v1/climate/stations/${committed.prov}`)
       .then(r => r.ok ? r.json() : null)
@@ -93,7 +93,7 @@ function TabPeta({ climate, committed, REGIONS }) {
   React.useEffect(() => {
     if (!kabObj.kecLevel) { setRiskZones(null); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     setRiskLoading(true);
     fetch(`${cfg.ML_API_URL}/v1/risk/zones`)
       .then(r => r.ok ? r.json() : null)
@@ -105,7 +105,7 @@ function TabPeta({ climate, committed, REGIONS }) {
   React.useEffect(() => {
     if (param !== "t2m") { setEra4Stations(null); setEra4Error(null); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) {
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) {
       setEra4Error("ML API dinonaktifkan"); setEra4Loading(false); return;
     }
     const pts = getStations("t2m", month, provGrid);

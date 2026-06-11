@@ -40,7 +40,7 @@ function TabIkhtisar({ climate, committed, REGIONS, setTab, setRoute, openAI, ye
     const locationLabel = kabObj.locationLabel;
     if (!locationLabel) { setDailyError("no-data"); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     setDailyData(null); setDailyError(null); setDailyLoading(true);
     const params = new URLSearchParams();
     if (year) params.set("year", year);
@@ -56,7 +56,7 @@ function TabIkhtisar({ climate, committed, REGIONS, setTab, setRoute, openAI, ye
     const locationLabel = kabObj.locationLabel;
     if (!locationLabel) { setAnnualError("no-data"); return; }
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     setAnnualData(null); setAnnualError(null); setAnnualLoading(true);
     fetch(`${cfg.ML_API_URL}/v1/climate/annual/${encodeURIComponent(locationLabel)}`)
       .then(r => r.ok ? r.json() : Promise.reject(`HTTP ${r.status}`))
@@ -68,7 +68,7 @@ function TabIkhtisar({ climate, committed, REGIONS, setTab, setRoute, openAI, ye
   React.useEffect(() => {
     setLiveWeather(null); setLiveError(null); setLiveLoading(true);
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) {
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) {
       setLiveError("ML API dinonaktifkan (ML_API_ENABLED: false)");
       setLiveLoading(false);
       return;
@@ -95,7 +95,7 @@ function TabIkhtisar({ climate, committed, REGIONS, setTab, setRoute, openAI, ye
   // Fetch kondisi terkini semua stasiun di provinsi dari DB
   React.useEffect(() => {
     const cfg = window.APP_CONFIG || {};
-    if (!cfg.ML_API_ENABLED || !cfg.ML_API_URL) return;
+    if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) return;
     const kabs = Object.entries(provObj.kab).filter(([, o]) => o.data);
     Promise.all(kabs.map(([kk, o]) =>
       fetch(`${cfg.ML_API_URL}/v1/sample/weather?lat=${o.lat}&lon=${o.lng}`)
