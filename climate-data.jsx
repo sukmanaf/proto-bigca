@@ -8,22 +8,22 @@
 const MONTHS_ID = ["Jan","Feb","Mar","Apr","Mei","Jun","Jul","Agu","Sep","Okt","Nov","Des"];
 
 // ---- Daftar wilayah (selektor) ----
-// data: ada/tidaknya data iklim. kecLevel: granularitas kecamatan lengkap.
+// data: ada/tidaknya data iklim di nasa_power_monthly. kecLevel: granularitas kecamatan.
+// locationLabel harus cocok persis dengan kolom location_label di DB.
 const CLIMATE_REGIONS = {
-  sulsel: {
-    name: "Sulawesi Selatan",
-    kab: {
-      makassar:    { name: "Kota Makassar", data: true, locationLabel: "Makassar", lng: 119.4221, lat: -5.1477, kec: [] },
-      bone:        { name: "Bone",          data: true, locationLabel: "Bone",     lng: 120.3300, lat: -4.5375, kec: [] },
-      tana_toraja: { name: "Tana Toraja",   data: true, locationLabel: "Toraja",   lng: 119.8222, lat: -2.9700, kec: [] },
-      maros:       { name: "Maros",         data: false, locationLabel: null,      lng: 119.5720, lat: -5.0080, kec: [] },
-    },
-  },
   jabar: {
     name: "Jawa Barat",
     kab: {
-      bandung:   { name: "Kota Bandung", data: true,  locationLabel: "Bandung", lng: 107.6098, lat: -6.9147, kec: [] },
-      bogor:     { name: "Kota Bogor",   data: false, locationLabel: null,      lng: 106.7942, lat: -6.5950, kec: [] },
+      bandung:     { name: "Kota Bandung",  data: true, locationLabel: "Bandung",     lng: 107.6100, lat: -6.9100, kec: [] },
+      bogor:       { name: "Kota Bogor",    data: true, locationLabel: "Bogor",        lng: 106.8000, lat: -6.6000, kec: [] },
+      bekasi:      { name: "Kota Bekasi",   data: true, locationLabel: "Bekasi",       lng: 107.0000, lat: -6.2400, kec: [] },
+      depok:       { name: "Kota Depok",    data: true, locationLabel: "Depok",        lng: 106.8200, lat: -6.4000, kec: [] },
+      cirebon:     { name: "Kota Cirebon",  data: true, locationLabel: "Cirebon",      lng: 108.5500, lat: -6.7100, kec: [] },
+      karawang:    { name: "Karawang",      data: true, locationLabel: "Karawang",     lng: 107.3000, lat: -6.3200, kec: [] },
+      subang:      { name: "Subang",        data: true, locationLabel: "Subang",       lng: 107.7500, lat: -6.5700, kec: [] },
+      garut:       { name: "Garut",         data: true, locationLabel: "Garut",        lng: 107.9000, lat: -7.2200, kec: [] },
+      tasikmalaya: { name: "Tasikmalaya",   data: true, locationLabel: "Tasikmalaya",  lng: 108.2200, lat: -7.3300, kec: [] },
+      sukabumi:    { name: "Sukabumi",      data: true, locationLabel: "Sukabumi",     lng: 106.9300, lat: -6.9200, kec: [] },
     },
   },
   diy: {
@@ -42,11 +42,23 @@ const CLIMATE_REGIONS = {
           { code: "gedongtengen", name: "Gedongtengen", lng: 110.3600, lat: -7.7920 },
         ],
       },
+      sleman:      { name: "Sleman",          data: true, locationLabel: "Sleman_C",  lng: 110.3900, lat: -7.6850, kec: [] },
+      bantul:      { name: "Bantul",          data: true, locationLabel: "Bantul_C",  lng: 110.3500, lat: -7.9100, kec: [] },
+      gunungkidul: { name: "Gunungkidul",     data: true, locationLabel: "GKidul_C",  lng: 110.6000, lat: -7.9700, kec: [] },
+      kulonprogo:  { name: "Kulon Progo",     data: true, locationLabel: "KProgo_C",  lng: 110.1300, lat: -7.8050, kec: [] },
     },
   },
-  // Provinsi tanpa data (untuk demonstrasi state "belum tersedia")
-  papua:   { name: "Papua", kab: { jayapura: { name: "Kota Jayapura", data: false, lng: 140.7181, lat: -2.5337, kec: [] } } },
-  ntt:     { name: "Nusa Tenggara Timur", kab: { kupang: { name: "Kota Kupang", data: false, lng: 123.6075, lat: -10.1772, kec: [] } } },
+  sulsel: {
+    name: "Sulawesi Selatan",
+    kab: {
+      makassar:    { name: "Kota Makassar", data: true, locationLabel: "Makassar", lng: 119.4200, lat: -5.1400, kec: [] },
+      bone:        { name: "Bone",          data: true, locationLabel: "Bone",     lng: 120.3300, lat: -4.5400, kec: [] },
+      tana_toraja: { name: "Tana Toraja",   data: true, locationLabel: "Toraja",   lng: 119.8500, lat: -3.0500, kec: [] },
+    },
+  },
+  // Provinsi tanpa data (placeholder)
+  papua: { name: "Papua", kab: { jayapura: { name: "Kota Jayapura", data: false, locationLabel: null, lng: 140.7181, lat: -2.5337, kec: [] } } },
+  ntt:   { name: "Nusa Tenggara Timur", kab: { kupang: { name: "Kota Kupang", data: false, locationLabel: null, lng: 123.6075, lat: -10.1772, kec: [] } } },
 };
 
 // CLIMATE_DATA dihapus — semua data historis kini diambil dari DB via API:

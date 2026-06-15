@@ -5466,6 +5466,12 @@ html[data-density="compact"] .dashboard { gap: 16px; padding: 16px 20px 24px; }
 .pred-area-month { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--gray-600); margin-left: auto; }
 .pred-area-month select { font-family: inherit; font-size: 12.5px; padding: 6px 9px; border: 1px solid var(--gray-300); border-radius: var(--radius-md); background: var(--surface, #fff); }
 .pred-run.sm { margin: 0; padding: 8px 16px; font-size: 13px; }
+.pred-scope-toggle { display: flex; border: 1.5px solid var(--primary-600); border-radius: var(--radius-md); overflow: hidden; flex-shrink: 0; }
+.pred-scope-btn { padding: 6px 11px; font-size: 12px; font-weight: 500; background: transparent; border: none; color: var(--primary-600); cursor: pointer; transition: background var(--dur-fast); white-space: nowrap; font-family: inherit; }
+.pred-scope-btn:hover:not(:disabled) { background: var(--primary-50, #f0f7fb); }
+.pred-scope-btn.on { background: var(--primary-600); color: #fff; }
+.pred-scope-btn + .pred-scope-btn { border-left: 1.5px solid var(--primary-600); }
+.pred-scope-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .pred-area-stage { position: relative; height: 380px; border-radius: var(--radius-lg); overflow: hidden; border: 1px solid var(--border-subtle, var(--gray-200)); }
 .pred-area-stage .mlx-map { position: absolute; inset: 0; }
 .pred-area-empty { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; color: var(--gray-400); font-size: 13px; background: var(--surface-sunken, #E9EEEA); }

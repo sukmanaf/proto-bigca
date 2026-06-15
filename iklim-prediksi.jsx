@@ -8,7 +8,7 @@ const Icon = window.Icon;
 const tr = window.tr;
 const MONTHS = window.MONTHS_ID;
 
-function TabPrediksi({ climate, committed, REGIONS, setTab }) {
+function TabPrediksi({ climate, committed, REGIONS, setTab, year }) {
   const TASKS = window.ML_TASKS;
   const provObj = REGIONS[committed.prov];
   const kabObj = provObj.kab[committed.kab];
@@ -148,7 +148,7 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
       </div>
 
       {mode === "area" ? (
-        <AreaGridPredict task={task} month={month} setMonth={setMonth} climate={climate} committed={committed} REGIONS={REGIONS} setTab={setTab} taskObj={taskObj} />
+        <AreaGridPredict task={task} month={month} setMonth={setMonth} climate={climate} committed={committed} REGIONS={REGIONS} setTab={setTab} taskObj={taskObj} year={year} />
       ) : (
         <div className="pred-two">
           {/* PARAMETER */}
@@ -200,23 +200,66 @@ function TabPrediksi({ climate, committed, REGIONS, setTab }) {
   );
 }
 
-function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, setTab, taskObj }) {
+function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, setTab, taskObj, year }) {
   const provObj = REGIONS[committed.prov];
   const kabObj = provObj.kab[committed.kab];
+  const kecObj = committed.kec && kabObj.kecLevel
+    ? (kabObj.kec || []).find(k => k.code === committed.kec) || null
+    : null;
+
+  const defaultScope = kecObj ? "kec" : "kab";
   const [running, setRunning] = React.useState(false);
   const [grid, setGrid] = React.useState(null);
   const [progress, setProgress] = React.useState(0);
   const [gridError, setGridError] = React.useState(null);
+  const [gridScope, setGridScope] = React.useState(defaultScope);
 
-  React.useEffect(() => { setGrid(null); setGridError(null); }, [task]);
+  React.useEffect(() => {
+    const def = kecObj ? "kec" : "kab";
+    setGrid(null); setGridError(null); setGridScope(def);
+  }, [task, committed.kab, committed.kec]);
 
   const isClass = task === "uc1";
   const unit = task === "uc1" ? "" : "°C";
-  const center = [kabObj.lng, kabObj.lat];
-  const span = committed.prov === "diy" ? 0.10 : 0.55;
 
-  async function runGrid() {
-    if (task === "uc3") return; // anomali tidak mendukung mode grid
+  // Scope yang tersedia: hanya bisa ke atas (kec → kab → prov)
+  const availableScopes = [...(kecObj ? ["kec"] : []), "kab", "prov"];
+  const scopeNames = {
+    kec: kecObj ? kecObj.name : "",
+    kab: kabObj.name,
+    prov: provObj.name,
+  };
+
+  // Hitung center + span dari data yang ada — tidak hardcode per wilayah
+  function computeGeo(scope) {
+    if (scope === "prov") {
+      const kabs = Object.values(provObj.kab);
+      const lngs = kabs.map(k => k.lng), lats = kabs.map(k => k.lat);
+      const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      const s = Math.max(maxLng - minLng, maxLat - minLat) * 1.6 || 0.5;
+      const c = [(minLng + maxLng) / 2, (minLat + maxLat) / 2];
+      const z = s < 0.3 ? 11 : s < 0.8 ? 9 : s < 1.5 ? 8 : s < 3 ? 7 : 6;
+      return { center: c, span: s, mapZoom: z };
+    }
+    if (scope === "kec" && kecObj) {
+      return { center: [kecObj.lng, kecObj.lat], span: 0.05, mapZoom: 14 };
+    }
+    // kab: hitung dari bounding box kecamatan jika ada, jika tidak pakai default
+    if (kabObj.kecLevel && kabObj.kec && kabObj.kec.length > 0) {
+      const lngs = kabObj.kec.map(k => k.lng), lats = kabObj.kec.map(k => k.lat);
+      const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+      const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+      const s = Math.max(maxLng - minLng, maxLat - minLat) * 2.2 || 0.15;
+      return { center: [kabObj.lng, kabObj.lat], span: s, mapZoom: 12 };
+    }
+    return { center: [kabObj.lng, kabObj.lat], span: 0.15, mapZoom: 11 };
+  }
+
+  const { center, mapZoom } = React.useMemo(() => computeGeo(gridScope), [gridScope, committed.prov, committed.kab, committed.kec]);
+
+  async function runGrid(scope = gridScope) {
+    if (task === "uc3") return;
     const cfg = window.APP_CONFIG || {};
     if (!cfg.ML_API_ENABLED || cfg.ML_API_URL == null) {
       setGridError("ML API dinonaktifkan");
@@ -225,54 +268,104 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
     setRunning(true); setGrid(null); setProgress(0); setGridError(null);
     const cols = 14, rows = 14;
     const b = climate.series[month];
+    const endpoint = task === "uc1" ? "/v1/predict/batch/weather" : "/v1/predict/batch/climate";
 
-    // Build 196-item batch request
-    const items = [];
-    const cellMeta = [];
-    for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
-      const lng = center[0] - span / 2 + (c + 0.5) / cols * span;
-      const lat = center[1] - span / 2 + (r + 0.5) / rows * span;
-      cellMeta.push({ lng, lat, c, r, dx: span / cols, dy: span / rows });
-      if (task === "uc1") {
-        items.push({
-          suhu_c: b.t2m, kelembaban_pct: b.rh,
-          kecepatan_angin_kmh: +(b.wind * 3.6).toFixed(1),
-          arah_angin_deg: 180, tutupan_awan_pct: 50,
-          lat, lon: lng,
-          datetime_local: new Date().toISOString().replace("T", " ").slice(0, 19),
-        });
-      } else {
-        items.push({
-          lat, lon: lng, month: month + 1,
-          rh2m: b.rh, ws2m: b.wind, allsky_sfc_sw_dwn: b.rad,
-        });
+    function buildCells(gc, gs) {
+      const its = [], meta = [];
+      for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) {
+        const lng = gc[0] - gs / 2 + (c + 0.5) / cols * gs;
+        const lat = gc[1] - gs / 2 + (r + 0.5) / rows * gs;
+        meta.push({ lng, lat, c, r, dx: gs / cols, dy: gs / rows });
+        if (task === "uc1") {
+          its.push({
+            suhu_c: b.t2m, kelembaban_pct: b.rh,
+            kecepatan_angin_kmh: +(b.wind * 3.6).toFixed(1),
+            arah_angin_deg: 180, tutupan_awan_pct: 50,
+            lat, lon: lng,
+            datetime_local: new Date().toISOString().replace("T", " ").slice(0, 19),
+          });
+        } else {
+          its.push({ lat, lon: lng, month: month + 1, rh2m: b.rh, ws2m: b.wind, allsky_sfc_sw_dwn: b.rad });
+        }
       }
+      return { its, meta };
     }
 
-    try {
-      const endpoint = task === "uc1"
-        ? "/v1/predict/batch/weather"
-        : "/v1/predict/batch/climate";
-      setProgress(30);
+    async function fetchBatch(its, meta) {
       const r = await fetch(`${cfg.ML_API_URL}${endpoint}`, {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items }),
+        body: JSON.stringify({ items: its }),
       });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      setProgress(80);
+      return { results: data.results, meta };
+    }
 
-      const cells = [];
+    try {
+      const allCells = [];
       let vmin = Infinity, vmax = -Infinity, cls = {};
-      data.results.forEach((res, idx) => {
-        if (!res) return;
-        const m = cellMeta[idx];
-        const v = task === "uc1" ? res.predicted : res.predicted;
-        cells.push({ lng: m.lng, lat: m.lat, v, prob: res.proba || null, c: m.c, r: m.r, dx: m.dx, dy: m.dy });
-        if (!isClass) { vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); }
-        else cls[v] = (cls[v] || 0) + 1;
-      });
-      setGrid({ cells, vmin, vmax, cls, n: cells.length });
+
+      function collectResults(results, meta) {
+        results.forEach((res, idx) => {
+          if (!res) return;
+          const m = meta[idx];
+          const v = res.predicted;
+          allCells.push({ lng: m.lng, lat: m.lat, v, prob: res.proba || null, c: m.c, r: m.r, dx: m.dx, dy: m.dy });
+          if (!isClass) { vmin = Math.min(vmin, v); vmax = Math.max(vmax, v); }
+          else cls[v] = (cls[v] || 0) + 1;
+        });
+      }
+
+      if (scope === "prov" && task === "uc2") {
+        // Province UC-2: panggil endpoint khusus yang ambil fitur cuaca per kab dari DB,
+        // bukan pakai fitur kab terpilih untuk semua kab (bug lama: hasil seragam).
+        setProgress(30);
+        const yp = year ? `&year=${year}` : "";
+        const url = `${cfg.ML_API_URL}/v1/predict/climate/by-province/${encodeURIComponent(committed.prov)}?month=${month + 1}${yp}`;
+        const r = await fetch(url);
+        if (!r.ok) throw new Error(`HTTP ${r.status}`);
+        const data = await r.json();
+        setProgress(80);
+        const sz = 0.15;
+        data.results.forEach(res => {
+          const v = res.predicted;
+          allCells.push({
+            lng: res.lon, lat: res.lat, v, prob: null,
+            c: 0, r: 0, dx: sz, dy: sz, label: res.label,
+          });
+          vmin = Math.min(vmin, v);
+          vmax = Math.max(vmax, v);
+        });
+      } else if (scope === "prov") {
+        // Province UC-1 (klasifikasi): masih pakai endpoint batch lama.
+        // (UC-1 tidak memiliki endpoint by-province khusus.)
+        const kabList = Object.values(provObj.kab).filter(k => k.data);
+        const its = [], meta = [];
+        const sz = 0.15;
+        for (const kab of kabList) {
+          meta.push({ lng: kab.lng, lat: kab.lat, c: 0, r: 0, dx: sz, dy: sz });
+          its.push({
+            suhu_c: b.t2m, kelembaban_pct: b.rh,
+            kecepatan_angin_kmh: +(b.wind * 3.6).toFixed(1),
+            arah_angin_deg: 180, tutupan_awan_pct: 50,
+            lat: kab.lat, lon: kab.lng,
+            datetime_local: new Date().toISOString().replace("T", " ").slice(0, 19),
+          });
+        }
+        setProgress(30);
+        const { results } = await fetchBatch(its, meta);
+        setProgress(80);
+        collectResults(results, meta);
+      } else {
+        const { center: gc, span: gs } = computeGeo(scope);
+        const { its, meta } = buildCells(gc, gs);
+        setProgress(30);
+        const { results } = await fetchBatch(its, meta);
+        setProgress(80);
+        collectResults(results, meta);
+      }
+
+      setGrid({ cells: allCells, vmin, vmax, cls, n: allCells.length });
       setProgress(100);
     } catch (err) {
       setGridError(`Gagal batch predict: ${err.message}`);
@@ -286,8 +379,11 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
       const map = { "Hujan": "#1E4E6B", "Berawan": "#88A6B5", "Cerah Berawan": "#E9C46A", "Cerah": "#E9A352" };
       return map[v] || "#9DACA4";
     }
-    const lo = grid.vmin, hi = grid.vmax;
-    const t = hi > lo ? (v - lo) / (hi - lo) : 0.5;
+    // Skala warna ABSOLUT — supaya suhu yang sama selalu menghasilkan warna yang sama,
+    // baik di mode prov maupun kab. Untuk t2m Indonesia: 18°C (biru) → 25°C (krem) → 32°C (merah).
+    const lo = task === "uc3" ? 0 : 18;
+    const hi = task === "uc3" ? 800 : 32;
+    const t = Math.max(0, Math.min(1, (v - lo) / (hi - lo)));
     const ramp = task === "uc3" ? ["#FBF3E0", "#60A5FA", "#11324B"] : ["#1E6CB5", "#FDF3DC", "#C44E37"];
     const seg = t < 0.5 ? 0 : 1, lt = t < 0.5 ? t * 2 : (t - 0.5) * 2;
     return lerpHex(ramp[seg], ramp[seg + 1], lt);
@@ -304,7 +400,14 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
       <div className="pred-area-toolbar">
         <div className="pred-area-info">
           <Icon name="grid-3x3" size={14} />
-          <span>{tr("Prediksi grid")} {taskObj.code} · {kabObj.name} · 14×14 sel · {MONTHS[month]}</span>
+          <span>{tr("Prediksi grid")} {taskObj.code} · {scopeNames[gridScope]} · {gridScope === "prov" ? `${Object.values(provObj.kab).filter(k => k.data).length} kab/kota` : "14×14 sel"} · {MONTHS[month]}</span>
+        </div>
+        <div className="pred-scope-toggle">
+          {availableScopes.map(s => (
+            <button key={s} className={`pred-scope-btn${gridScope === s ? " on" : ""}`} onClick={() => { setGridScope(s); runGrid(s); }} disabled={running}>
+              {scopeNames[s]}
+            </button>
+          ))}
         </div>
         <label className="pred-area-month">{tr("Bulan")}
           <select value={month} onChange={e => setMonth(+e.target.value)}>{MONTHS.map((m, i) => <option key={i} value={i}>{m}</option>)}</select>
@@ -328,7 +431,7 @@ function AreaGridPredict({ task, month, setMonth, climate, committed, REGIONS, s
           <div className="pred-area-empty"><span className="pred-spin big" /><span>{tr("Memprediksi")} 196 {tr("sel")} · {taskObj.model}… {progress}%</span></div>
         )}
         {grid && (
-          <window.GeoMap key={committed.kab} center={center} zoom={committed.prov === "diy" ? 11.5 : 9} basemap="positron" polygons={polygons} controls={true} />
+          <window.GeoMap key={committed.kab + gridScope} center={center} zoom={mapZoom} basemap="positron" polygons={polygons} controls={true} />
         )}
       </div>
 

@@ -155,7 +155,7 @@ function IklimWilayah({ ctx, setRoute, openAI }) {
         <window.TabIkhtisar climate={climate} committed={committed} REGIONS={REGIONS} setTab={setTab} setRoute={setRoute} openAI={openAI} year={year} setYear={setYear} availableYears={availableYears} seriesLoading={seriesLoading} />
       )}
       {committed && climate && tab === "prediksi" && (
-        <window.TabPrediksi climate={climate} committed={committed} REGIONS={REGIONS} setTab={setTab} />
+        <window.TabPrediksi climate={climate} committed={committed} REGIONS={REGIONS} setTab={setTab} year={year} />
       )}
       {committed && climate && tab === "peta" && (
         <window.TabPeta climate={climate} committed={committed} REGIONS={REGIONS} />
